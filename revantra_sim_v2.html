@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REVANTRA: ASURA FALL — Node Map Simulator v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080C18;--s1:#141B2D;--s2:#1E293B;--s3:#0F172A;
+  --bd:#2D3748;--tx:#E2E8F0;--mu:#94A3B8;--dm:#64748B;--ft:#475569;
+  --gold:#F59E0B;--red:#EF4444;--grn:#22C55E;--blu:#3B82F6;--org:#F97316;
+  --teal:#10B981;--pur:#8B5CF6;--pink:#EC4899;--dpurp:#6D28D9;
+}
+body{background:var(--bg);color:var(--tx);font-family:'Sarabun','Segoe UI',sans-serif;min-height:100vh;font-size:14px}
+button{font-family:inherit;cursor:pointer;border:none}
+select,input{font-family:inherit}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--s3)}
+::-webkit-scrollbar-thumb{background:var(--ft);border-radius:3px}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#1E0A2E,#0F172A 50%,#1A0A0A);border-bottom:1px solid var(--bd);padding:16px 20px}
+.hdr-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.hdr h1{font-size:20px;font-weight:800;background:linear-gradient(90deg,#F59E0B,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-sub{font-size:12px;color:var(--mu)}
+
+/* LAYOUT */
+.wrap{max-width:1200px;margin:0 auto;padding:16px 12px}
+.grid-main{display:grid;grid-template-columns:1fr 340px;gap:14px}
+@media(max-width:900px){.grid-main{grid-template-columns:1fr}}
+
+/* CARD */
+.c{background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:12px;border:1px solid transparent}
+.c-title{font-size:11px;color:var(--dm);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+
+/* BUTTONS */
+.btn{padding:8px 18px;border-radius:7px;font-weight:700;font-size:13px;transition:all .12s}
+.btn-fire{background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;box-shadow:0 3px 12px rgba(245,158,11,0.3)}
+.btn-fire:hover{transform:scale(1.03);box-shadow:0 5px 18px rgba(245,158,11,0.4)}
+.btn-fire:active{transform:scale(0.97)}
+.btn-ghost{background:var(--s3);color:var(--mu);border:1px solid var(--bd);padding:6px 14px;font-size:12px}
+.btn-ghost:hover{background:var(--s2)}
+.btn-sm{padding:4px 10px;font-size:10px;border-radius:5px}
+
+/* CONTROLS */
+.ctrl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.sel{padding:5px 8px;background:var(--s3);color:var(--tx);border:1px solid var(--bd);border-radius:5px;font-size:12px}
+
+/* CANVAS */
+.map-wrap{position:relative;margin-bottom:12px}
+canvas{display:block;width:100%;border-radius:10px;cursor:pointer}
+.map-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:5px;padding:3px 12px;font-size:10px;color:#FCD34D;white-space:nowrap;pointer-events:none}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--bd);padding-bottom:0}
+.tab{padding:6px 14px;font-size:12px;font-weight:600;color:var(--dm);background:transparent;border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:var(--mu)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* WEIGHT EDITOR */
+.w-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px}
+.w-icon{width:20px;text-align:center;flex-shrink:0}
+.w-label{width:60px;color:var(--mu);flex-shrink:0}
+.w-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bd);outline:none}
+.w-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;cursor:pointer}
+.w-val{width:32px;text-align:right;font-weight:600;flex-shrink:0}
+.w-section{margin-bottom:10px}
+.w-section-title{font-size:10px;font-weight:700;margin-bottom:6px;padding:3px 8px;border-radius:4px;display:inline-block}
+
+/* PLAYER PANEL */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid #1a2436}
+.stat-label{color:var(--mu)}
+.stat-val{font-weight:700}
+.hp-bar{height:10px;background:var(--s3);border-radius:5px;overflow:hidden;margin:4px 0}
+.hp-fill{height:100%;border-radius:5px;transition:width .4s}
+.momentum-bar{height:6px;background:var(--s3);border-radius:3px;overflow:hidden;margin:3px 0}
+
+/* YANTRA SLOTS */
+.yantra-slots{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.yantra-slot{background:var(--s3);border:2px dashed var(--bd);border-radius:8px;padding:8px;min-height:70px;position:relative;transition:all .2s}
+.yantra-slot.filled{border-style:solid}
+.yantra-slot .slot-num{position:absolute;top:4px;left:6px;font-size:9px;color:var(--ft);font-weight:700}
+.yantra-slot .y-name{font-size:11px;font-weight:700;margin-bottom:2px}
+.yantra-slot .y-effect{font-size:10px;color:var(--mu)}
+.yantra-slot .y-color{position:absolute;top:4px;right:6px;font-size:12px}
+
+/* YANTRA PICK MODAL */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:12px}
+.yantra-pick{background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.yantra-pick:hover{border-color:var(--gold);background:#1a2a3a}
+.yantra-pick .yp-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.yantra-pick .yp-id{font-size:10px;color:var(--ft);font-weight:600}
+.yantra-pick .yp-name{font-size:13px;font-weight:700}
+.yantra-pick .yp-effect{font-size:11px;color:var(--mu)}
+.yantra-pick .yp-lore{font-size:10px;color:var(--ft);font-style:italic;margin-top:2px}
+
+/* PATH */
+.path-row{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.path-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600}
+.path-arrow{color:var(--ft);font-size:10px}
+
+/* DISTRIBUTION */
+.dist-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.dist-icon{width:18px;font-size:12px;text-align:center;flex-shrink:0}
+.dist-lbl{width:55px;font-size:10px;color:var(--mu);flex-shrink:0}
+.dist-bar{flex:1;height:6px;background:var(--s3);border-radius:3px;overflow:hidden}
+.dist-fill{height:100%;border-radius:3px;transition:width .4s}
+.dist-n{width:22px;font-size:10px;font-weight:700;text-align:right;flex-shrink:0}
+
+/* VALIDATION */
+.val-row{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:11px}
+
+/* LAYER TABLE */
+.lt{width:100%;border-collapse:collapse;font-size:11px}
+.lt th{padding:5px 6px;text-align:left;color:var(--dm);font-weight:600;border-bottom:1px solid var(--bd);font-size:10px}
+.lt td{padding:4px 6px;border-bottom:1px solid #151d2e}
+.phase-tag{padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700}
+.node-chip{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:3px;font-size:10px;margin:1px;cursor:pointer;transition:background .15s}
+.node-chip:hover{filter:brightness(1.3)}
+.node-chip select{background:transparent;border:none;color:inherit;font-size:10px;font-family:inherit;font-weight:600;cursor:pointer;padding:0}
+.node-chip select option{background:var(--s2);color:var(--tx)}
+
+/* HISTORY */
+.hist-e{display:flex;align-items:center;gap:5px;margin-bottom:4px;padding:4px 8px;background:var(--s3);border-radius:5px;font-size:11px}
+
+/* Run complete banner */
+.run-done{padding:12px;background:linear-gradient(135deg,#0a2a1a,#0a1a2a);border-radius:10px;border:1px solid rgba(34,197,94,0.2);margin-bottom:12px}
+
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div class="hdr"><div class="hdr-in">
+  <span style="font-size:24px">🗺️</span>
+  <div><h1>REVANTRA: ASURA FALL</h1><div class="hdr-sub">Node Map Simulator v2 — Weight Editor + Yantra System + Player Status</div></div>
+</div></div>
+
+<div class="wrap">
+  <div class="ctrl-row">
+    <button class="btn btn-fire" onclick="doGenerate()">🎲 สุ่ม Run ใหม่</button>
+    <button class="btn btn-ghost" id="btnReset" onclick="doReset()" style="display:none">↺ รีเซ็ต</button>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <span style="font-size:10px;color:var(--dm)">Pattern:</span>
+      <select class="sel" id="patSel"><option value="">สุ่ม</option></select>
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <!-- LEFT COL -->
+    <div id="leftCol">
+      <div id="emptyState" class="c" style="text-align:center;padding:60px 20px;color:var(--ft)">
+        <div style="font-size:40px;margin-bottom:12px">🗺️</div>
+        <p style="font-size:14px">กด "สุ่ม Run ใหม่" เพื่อเริ่ม</p>
+        <p style="font-size:11px;color:var(--bd);margin-top:4px">ปรับ Weight ได้ที่แผงด้านขวา</p>
+      </div>
+      <div id="mapArea" class="hidden"></div>
+    </div>
+
+    <!-- RIGHT COL: Player + Weight Editor -->
+    <div id="rightCol">
+      <!-- Player Status -->
+      <div class="c" id="playerPanel">
+        <div class="c-title">👤 Player Status — ภานุ</div>
+        <div id="playerStats"></div>
+      </div>
+
+      <!-- Yantra Slots -->
+      <div class="c">
+        <div class="c-title">🔮 Yantra Slots (4 ช่อง)</div>
+        <div class="yantra-slots" id="yantraSlots"></div>
+        <div id="yantraSummary" style="font-size:10px;color:var(--dm);margin-top:4px"></div>
+      </div>
+
+      <!-- Weight Editor -->
+      <div class="c">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="c-title" style="margin:0">⚖️ Weight Editor</div>
+          <button class="btn btn-ghost btn-sm" onclick="resetWeights()">รีเซ็ต Default</button>
+        </div>
+        <div class="tabs">
+          <button class="tab active" onclick="switchWTab(0,this)">Early</button>
+          <button class="tab" onclick="switchWTab(1,this)">Mid</button>
+          <button class="tab" onclick="switchWTab(2,this)">Pre-Boss</button>
+        </div>
+        <div id="weightEditor"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Yantra Pick Modal -->
+<div class="modal-overlay hidden" id="yantraModal">
+  <div class="modal">
+    <div class="modal-title" id="yantraModalTitle">🔮 เลือก Yantra</div>
+    <div id="yantraModalBody"></div>
+    <button class="btn btn-ghost" style="margin-top:10px;width:100%" onclick="closeYantraModal()">ข้าม (ไม่เลือก)</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+const PATTERNS=[
+  {id:"A",nodes:[3,2,2,3,2,2,2,1],name:"Wide Open",total:17},
+  {id:"B",nodes:[2,3,2,2,3,2,2,1],name:"Twin Peak",total:16},
+  {id:"C",nodes:[3,2,3,2,2,3,2,1],name:"Triple Wave",total:17},
+  {id:"D",nodes:[2,2,3,3,2,2,2,1],name:"Late Bloom",total:16},
+  {id:"E",nodes:[3,3,2,2,2,2,2,1],name:"Early Spread",total:16},
+];
+
+const RT={
+  Gold:{icon:"💰",color:"#F59E0B",label:"Gold"},
+  Weapon:{icon:"⚔️",color:"#EF4444",label:"Weapon"},
+  Upgrade:{icon:"⬆️",color:"#10B981",label:"Upgrade"},
+  Relic:{icon:"🔮",color:"#8B5CF6",label:"Relic"},
+  Healing:{icon:"❤️",color:"#EC4899",label:"Healing"},
+  Challenge:{icon:"⚠️",color:"#F97316",label:"Challenge"},
+  Vault:{icon:"👑",color:"#6D28D9",label:"Vault"},
+  Boss:{icon:"👹",color:"#DC2626",label:"Boss"},
+};
+const ROOM_KEYS=["Gold","Weapon","Upgrade","Relic","Healing","Challenge","Vault"];
+
+const PHASES=[
+  {start:0,end:2,bg:"rgba(59,130,246,0.07)",border:"#3B82F6",label:"EARLY",color:"#3B82F6"},
+  {start:3,end:5,bg:"rgba(249,115,22,0.07)",border:"#F97316",label:"MID",color:"#F97316"},
+  {start:6,end:6,bg:"rgba(16,185,129,0.07)",border:"#10B981",label:"PRE-BOSS",color:"#10B981"},
+  {start:7,end:7,bg:"rgba(220,38,38,0.07)",border:"#DC2626",label:"BOSS",color:"#DC2626"},
+];
+
+// Yantra Pool
+const YANTRA_POOL=[
+  {id:"P01",name:"ยันต์ลมปราณ",sub:"Aetherflow",cat:"power",color:"🟦",effect:"Momentum Gain +20%",stat:{momentumGain:20},lore:"ลมหายใจสุดท้ายของวานรนักรบ"},
+  {id:"P02",name:"ยันต์แสงสุริยะ",sub:"Radiance",cat:"power",color:"🟦",effect:"Damage Reduction +15%",stat:{dmgReduction:15},lore:"แสงแห่งการปกป้องจากทวยเทพ"},
+  {id:"P03",name:"ยันต์ตาข่ายฟ้า",sub:"Sky Net",cat:"power",color:"🟦",effect:"Parry Window +0.02s",stat:{parryExt:0.02},lore:"วิชาตั้งรับของเทวดาที่ยักษ์ริบไป"},
+  {id:"P04",name:"ยันต์พาลี",sub:"Vali's Might",cat:"power",color:"🟦",effect:"Base ATK +15%",stat:{atkMult:15},lore:"พลังพญาพาลี ชิงกำลังครึ่งหนึ่งของศัตรู"},
+  {id:"P05",name:"ยันต์หนุมาน",sub:"White Vanguard",cat:"power",color:"🟦",effect:"Pole Spin DMG +20%",stat:{poleSpinDmg:20},lore:"หนุมาน เทพวานรแห่งความเร็ว"},
+  {id:"P06",name:"ยันต์ครุฑ",sub:"Sky Tyrant",cat:"power",color:"🟦",effect:"Ground Smash Bounce 100%",stat:{smashBounce:100},lore:"ขนนกเกล็ดเลือดพญาครุฑ"},
+  {id:"P07",name:"ยันต์เพลิงสุริยะ",sub:"Solarflare",cat:"power",color:"🟦",effect:"Perfect Parry → AoE 2m",stat:{parryAoe:2},lore:"เปลวไฟดวงอาทิตย์โบราณ"},
+  {id:"P08",name:"ยันต์ดวงดาว",sub:"Star Gazer",cat:"power",color:"🟦",effect:"Star Soul +15%, Shard +10%",stat:{soulDrop:15,shardMult:10},lore:"คำทำนายโหรหลวง"},
+  {id:"S01",name:"ยันต์ปีกวายุ",sub:"Gale Wing",cat:"synergy",color:"🟨",effect:"Dash Distance +15%",stat:{dashDist:15},lore:"ปีกลมของเทพวายุ",pair:"S02",bonus:"พายุคลั่ง: Sky Vault สร้างพายุหมุนดูดศัตรู 4m"},
+  {id:"S02",name:"ยันต์ตาพายุ",sub:"Eye of Storm",cat:"synergy",color:"🟨",effect:"Momentum ไม่ลดขณะ Airborne",stat:{airMomentum:true},lore:"แกนกลางพายุที่สงบนิ่ง",pair:"S01",bonus:"พายุคลั่ง: Sky Vault สร้างพายุหมุนดูดศัตรู 4m"},
+  {id:"S03",name:"ยันต์สุริยันฉาย",sub:"Sun's Ray",cat:"synergy",color:"🟨",effect:"Perfect Parry → Momentum +5",stat:{parryMomentum:5},lore:"แสงสุริยันที่ไม่มีวันดับ",pair:"S04",bonus:"แสงและเงา: Perfect Parry ฟื้น HP 2%"},
+  {id:"S04",name:"ยันต์จันทราฉาย",sub:"Moon's Shadow",cat:"synergy",color:"🟨",effect:"Counter DMG +15%",stat:{counterDmg:15},lore:"เงาจันทราที่ซ่อนความมืด",pair:"S03",bonus:"แสงและเงา: Perfect Parry ฟื้น HP 2%"},
+  {id:"C01",name:"ยันต์กุมภกรรณ์",sub:"Slumber",cat:"curse",color:"🟥",effect:"ATK +40%, Momentum ลดเร็ว 2x เมื่อนิ่ง",stat:{atkMult:40,momentumDecay:-100},lore:"พลังหลับใหลของกุมภกรรณ์"},
+  {id:"C02",name:"ยันต์โลหิต",sub:"Blood Oath",cat:"curse",color:"🟥",effect:"Counter +50%, Max HP -15%",stat:{counterDmg:50,maxHp:-15},lore:"สัญญาเลือดที่ห้ามทำลาย"},
+  {id:"C03",name:"ยันต์พิเภก",sub:"Seer's Curse",cat:"curse",color:"🟥",effect:"Crit +30%, DMG Reduction -20%",stat:{critChance:30,dmgReduction:-20},lore:"ดวงตาที่เห็นอนาคตแต่รับความจริงไม่ได้"},
+  {id:"C04",name:"ยันต์ทศกัณฐ์",sub:"Ten Faces",cat:"curse",color:"🟥",effect:"รอดตาย 1 ครั้ง (HP 50%) แต่เสีย Heal ทั้งหมด",stat:{revive:1,healCharges:-99},lore:"หน้ากากทั้งสิบของราวณะ"},
+  {id:"F01",name:"ยันต์มหาอันตรคาม",sub:"Void",cat:"forbidden",color:"🟪",effect:"ATK x2.5, HP ลด 1%/5s ในห้องสู้",stat:{atkMult:150,hpDrain:true},lore:"ความว่างเปล่าที่กลืนทุกสิ่ง"},
+  {id:"F02",name:"ยันต์สัญญาของมาร",sub:"Devil's Pact",cat:"forbidden",color:"🟪",effect:"ศัตรู <15% HP ตายทันที, ภานู <10% HP ตายทันที",stat:{execute:15,selfExecute:10},lore:"สัญญากับมารที่ไม่อาจถอน"},
+];
+
+const CAT_COLORS={power:"#3B82F6",curse:"#EF4444",synergy:"#F59E0B",forbidden:"#8B5CF6"};
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let weights={
+  early:{Gold:35,Weapon:25,Upgrade:15,Relic:10,Healing:10,Challenge:5,Vault:0},
+  mid:{Challenge:25,Upgrade:20,Relic:20,Weapon:15,Gold:10,Healing:5,Vault:5},
+  preBoss:{Healing:50,Upgrade:25,Gold:15,Relic:10,Challenge:0,Weapon:0,Vault:0},
+};
+const DEFAULT_WEIGHTS=JSON.parse(JSON.stringify(weights));
+let currentMap=null, selectedPath=[], runHistory=[];
+let activeWTab=0;
+
+// Player state
+let player={
+  maxHp:100,hp:100,
+  baseAtk:20,atkMult:0,
+  counterDmg:0,dmgReduction:0,
+  momentum:0,maxMomentum:100,momentumGain:0,
+  critChance:5,critDmgMult:150,
+  parryExt:0,healCharges:3,
+  kasapCoin:0,
+  yantra:[null,null,null,null],
+  synergies:[],
+};
+function resetPlayer(){
+  player={maxHp:100,hp:100,baseAtk:20,atkMult:0,counterDmg:0,dmgReduction:0,
+    momentum:0,maxMomentum:100,momentumGain:0,critChance:5,critDmgMult:150,
+    parryExt:0,healCharges:3,kasapCoin:0,yantra:[null,null,null,null],synergies:[]};
+}
+
+// ═══════════════════════════════════════════════════
+// MAP GENERATION
+// ═══════════════════════════════════════════════════
+function wRand(w){
+  const e=Object.entries(w).filter(([,v])=>v>0);
+  const t=e.reduce((s,[,v])=>s+v,0);
+  let r=Math.random()*t;
+  for(const[k,v]of e){r-=v;if(r<=0)return k;}
+  return e[e.length-1][0];
+}
+function phaseW(l){if(l<=2)return{...weights.early};if(l<=5)return{...weights.mid};return{...weights.preBoss};}
+function phaseOf(l){if(l<=2)return 0;if(l<=5)return 1;if(l===6)return 2;return 3;}
+
+function generateMap(po){
+  const pat=po||PATTERNS[Math.floor(Math.random()*PATTERNS.length)];
+  const layers=[];
+  for(let l=0;l<8;l++){
+    const c=pat.nodes[l],ln=[];
+    if(l===7){ln.push({type:"Boss",layer:l,index:0,conn:[]});}
+    else{for(let i=0;i<c;i++)ln.push({type:wRand(phaseW(l)),layer:l,index:i,conn:[]});}
+    layers.push(ln);
+  }
+  // Hard rules
+  const ef=()=>layers.slice(0,3).flat();
+  if(!ef().some(n=>n.type==="Gold")){const t=ef().filter(n=>n.type!=="Weapon");if(t.length)t[Math.floor(Math.random()*t.length)].type="Gold";}
+  if(!ef().some(n=>n.type==="Weapon")){const t=ef().filter(n=>n.type!=="Gold");if(t.length)t[Math.floor(Math.random()*t.length)].type="Weapon";}
+  if(!layers.slice(4,7).flat().some(n=>n.type==="Healing")){const p=layers[6];p[Math.floor(Math.random()*p.length)].type="Healing";}
+  const flat=layers.flat();
+  for(let i=2;i<flat.length;i++){if(flat[i].type!=="Boss"&&flat[i].type===flat[i-1].type&&flat[i].type===flat[i-2].type){const w=phaseW(flat[i].layer);w[flat[i].type]=0;flat[i].type=wRand(w);}}
+  let ch=flat.filter(n=>n.type==="Challenge");
+  while(ch.length>2){const t=ch.pop();const w=phaseW(t.layer);w.Challenge=0;t.type=wRand(w);ch=flat.filter(n=>n.type==="Challenge");}
+  let vt=flat.filter(n=>n.type==="Vault");
+  for(let i=1;i<vt.length;i++){const w=phaseW(vt[i].layer);w.Vault=0;vt[i].type=wRand(w);}
+  const bc=flat.filter(n=>n.type==="Upgrade"||n.type==="Relic").length;
+  if(bc<2){const cd=flat.filter(n=>!["Boss","Gold","Weapon","Upgrade","Relic"].includes(n.type));for(let i=0;i<2-bc&&i<cd.length;i++)cd[i].type=Math.random()>0.5?"Upgrade":"Relic";}
+  // Connections
+  for(let l=0;l<7;l++){
+    const c=layers[l],n=layers[l+1];
+    for(let i=0;i<c.length;i++){const mj=Math.max(0,Math.floor(i*n.length/c.length)),xj=Math.min(n.length-1,Math.ceil((i+1)*n.length/c.length));for(let j=mj;j<=xj;j++)if(!c[i].conn.includes(j))c[i].conn.push(j);}
+    for(let j=0;j<n.length;j++){if(!c.some(nd=>nd.conn.includes(j))){let b=0,bd=1e9;c.forEach((nd,idx)=>{const d=Math.abs(idx*n.length/c.length-j);if(d<bd){bd=d;b=idx;}});c[b].conn.push(j);}}
+  }
+  return{pattern:pat,layers};
+}
+
+function validateMap(layers){
+  const flat=layers.flat(),early=layers.slice(0,3).flat().map(n=>n.type),r=[];
+  const ck=(ok,lb)=>r.push({ok,label:lb});
+  ck(layers[7][0].type==="Boss","R1: Node 8 = Boss");
+  ck(early.includes("Gold"),"R2: Early มี Gold");
+  ck(early.includes("Weapon"),"R3: Early มี Weapon");
+  ck(layers.slice(4,7).flat().some(n=>n.type==="Healing"),"R4: Healing ก่อน Boss");
+  let nt=true;for(let i=2;i<flat.length;i++)if(flat[i].type!=="Boss"&&flat[i].type===flat[i-1].type&&flat[i].type===flat[i-2].type)nt=false;
+  ck(nt,"R5: No Triple");
+  ck(flat.filter(n=>n.type==="Challenge").length<=2,"R6: Challenge ≤ 2");
+  ck(flat.filter(n=>n.type==="Vault").length<=1,"R7: Vault ≤ 1");
+  ck(flat.filter(n=>n.type==="Upgrade"||n.type==="Relic").length>=2,"R8: Build Variety ≥ 2");
+  return r;
+}
+
+// ═══════════════════════════════════════════════════
+// ROOM EFFECTS ON PLAYER
+// ═══════════════════════════════════════════════════
+function applyRoomEffect(type){
+  switch(type){
+    case"Gold": player.kasapCoin+=Math.floor(30+Math.random()*40); break;
+    case"Weapon": player.baseAtk+=Math.floor(3+Math.random()*5); break;
+    case"Upgrade": player.atkMult+=5+Math.floor(Math.random()*8); break;
+    case"Healing": const heal=Math.floor(player.maxHp*0.3);player.hp=Math.min(player.maxHp,player.hp+heal);player.healCharges=Math.max(0,player.healCharges-1); break;
+    case"Challenge": const dmg=Math.floor(10+Math.random()*15);player.hp=Math.max(1,player.hp-dmg);player.kasapCoin+=Math.floor(50+Math.random()*60);player.atkMult+=8; break;
+    case"Vault": player.kasapCoin+=Math.floor(80+Math.random()*60);player.atkMult+=3; break;
+    case"Boss": const bDmg=Math.floor(20+Math.random()*25);player.hp=Math.max(0,player.hp-bDmg); break;
+  }
+  player.momentum=Math.min(player.maxMomentum,player.momentum+Math.floor(10+Math.random()*15+player.momentumGain*0.3));
+}
+
+// ═══════════════════════════════════════════════════
+// YANTRA SYSTEM
+// ═══════════════════════════════════════════════════
+let pendingYantraSlot=-1;
+function offerYantra(){
+  // Random 3 from pool, weighted by cat
+  const pool=[...YANTRA_POOL];
+  const picks=[];
+  for(let i=0;i<3&&pool.length;i++){
+    const idx=Math.floor(Math.random()*pool.length);
+    picks.push(pool.splice(idx,1)[0]);
+  }
+  showYantraModal(picks);
+}
+
+function showYantraModal(picks){
+  const modal=document.getElementById('yantraModal');
+  const body=document.getElementById('yantraModalBody');
+  const emptySlot=player.yantra.findIndex(y=>y===null);
+  const title=document.getElementById('yantraModalTitle');
+  title.textContent=emptySlot>=0?`🔮 เลือก Yantra → Slot ${emptySlot+1}`:'🔮 เลือก Yantra (สลักทับ)';
+  let html='';
+  picks.forEach(y=>{
+    const cc=CAT_COLORS[y.cat];
+    html+=`<div class="yantra-pick" onclick="pickYantra('${y.id}')" style="border-left:3px solid ${cc}">
+      <div class="yp-head"><span>${y.color}</span><span class="yp-id">${y.id}</span><span class="yp-name" style="color:${cc}">${y.name}</span><span style="font-size:10px;color:var(--ft)">(${y.sub})</span></div>
+      <div class="yp-effect">${y.effect}</div>
+      <div class="yp-lore">${y.lore}</div>
+      ${y.pair?`<div style="font-size:10px;color:var(--gold);margin-top:2px">⚡ Synergy: ${y.bonus}</div>`:''}
+    </div>`;
+  });
+  body.innerHTML=html;
+  modal.classList.remove('hidden');
+}
+
+function pickYantra(id){
+  const y=YANTRA_POOL.find(yy=>yy.id===id);
+  if(!y)return;
+  const emptySlot=player.yantra.findIndex(yy=>yy===null);
+  if(emptySlot>=0){
+    player.yantra[emptySlot]=y;
+  }else{
+    // Overwrite oldest
+    player.yantra.shift();
+    player.yantra.push(y);
+  }
+  applyYantraStats();
+  closeYantraModal();
+  renderAll();
+}
+
+function closeYantraModal(){
+  document.getElementById('yantraModal').classList.add('hidden');
+}
+
+function applyYantraStats(){
+  // Reset yantra-based stats
+  player.atkMult=0;player.dmgReduction=0;player.momentumGain=0;player.counterDmg=0;player.critChance=5;player.parryExt=0;
+  player.synergies=[];
+  const equipped=player.yantra.filter(y=>y!==null);
+  equipped.forEach(y=>{
+    if(y.stat.atkMult)player.atkMult+=y.stat.atkMult;
+    if(y.stat.dmgReduction)player.dmgReduction+=y.stat.dmgReduction;
+    if(y.stat.momentumGain)player.momentumGain+=y.stat.momentumGain;
+    if(y.stat.counterDmg)player.counterDmg+=y.stat.counterDmg;
+    if(y.stat.critChance)player.critChance+=y.stat.critChance;
+    if(y.stat.parryExt)player.parryExt+=y.stat.parryExt;
+    if(y.stat.maxHp)player.maxHp=Math.max(10,player.maxHp+y.stat.maxHp);
+    if(y.stat.healCharges)player.healCharges=Math.max(0,player.healCharges+y.stat.healCharges);
+  });
+  player.hp=Math.min(player.hp,player.maxHp);
+  // Check synergy pairs
+  const ids=equipped.map(y=>y.id);
+  equipped.forEach(y=>{
+    if(y.pair&&ids.includes(y.pair)&&!player.synergies.includes(y.bonus)){
+      player.synergies.push(y.bonus);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════════
+const CW=680,CH=460;
+function lx(l){return 45+l*((CW-90)/7);}
+function ny(l,i,c){const sp=Math.min(62,(CH-80)/(c+1)),th=sp*(c-1);return(CH/2)-(th/2)+i*sp;}
+
+function drawMap(){
+  const canvas=document.getElementById('mc');
+  if(!canvas||!currentMap)return;
+  const ctx=canvas.getContext('2d'),dpr=window.devicePixelRatio||1;
+  canvas.width=CW*dpr;canvas.height=CH*dpr;
+  canvas.style.aspectRatio=`${CW}/${CH}`;
+  ctx.scale(dpr,dpr);ctx.clearRect(0,0,CW,CH);
+  const layers=currentMap.layers;
+
+  PHASES.forEach(p=>{
+    const x1=lx(p.start)-32,x2=lx(p.end)+32;
+    ctx.fillStyle=p.bg;ctx.beginPath();ctx.roundRect(x1,12,x2-x1,CH-24,10);ctx.fill();
+    ctx.strokeStyle=p.border+"25";ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle=p.color;ctx.font="bold 8px 'Sarabun',sans-serif";ctx.textAlign="center";ctx.fillText(p.label,(x1+x2)/2,26);
+  });
+
+  layers.forEach((layer,l)=>{
+    if(l>=7)return;
+    layer.forEach((node,i)=>{
+      const x1=lx(l),y1=ny(l,i,layer.length);
+      node.conn.forEach(j=>{
+        const x2=lx(l+1),y2=ny(l+1,j,layers[l+1].length);
+        const onP=selectedPath.some(p=>p[0]===l&&p[1]===i)&&selectedPath.some(p=>p[0]===l+1&&p[1]===j);
+        ctx.beginPath();ctx.moveTo(x1+16,y1);
+        const cpx=(x1+x2)/2;ctx.bezierCurveTo(cpx,y1,cpx,y2,x2-16,y2);
+        ctx.strokeStyle=onP?"#F59E0B":"#47556935";ctx.lineWidth=onP?2.5:1.2;
+        if(onP){ctx.shadowColor="#F59E0B";ctx.shadowBlur=6;}
+        ctx.stroke();ctx.shadowBlur=0;
+      });
+    });
+  });
+
+  layers.forEach((layer,l)=>{
+    layer.forEach((node,i)=>{
+      const x=lx(l),y=ny(l,i,layer.length),rt=RT[node.type];
+      const onP=selectedPath.some(p=>p[0]===l&&p[1]===i);
+      let click=false;
+      if(!selectedPath.length&&l===0)click=true;
+      else if(selectedPath.length&&selectedPath.length<8){const last=selectedPath[selectedPath.length-1];if(l===last[0]+1&&layers[last[0]][last[1]].conn.includes(i))click=true;}
+
+      if(onP){ctx.shadowColor=rt.color;ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,18,0,Math.PI*2);ctx.fillStyle=rt.color+"25";ctx.fill();ctx.shadowBlur=0;}
+      ctx.beginPath();ctx.arc(x,y,15,0,Math.PI*2);
+      ctx.fillStyle=onP?rt.color:"#1E293B";ctx.fill();
+      ctx.strokeStyle=onP?"#FCD34D":click?rt.color:"#475569";ctx.lineWidth=onP?2.5:click?2:1;ctx.stroke();
+      if(click&&!onP){ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);ctx.strokeStyle=rt.color+"40";ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);}
+      ctx.font="13px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(rt.icon,x,y+1);
+      if(i===layer.length-1){const my=ny(l,layer.length-1,layer.length);ctx.font="bold 8px 'Sarabun',sans-serif";ctx.fillStyle="#4A5568";ctx.textAlign="center";ctx.fillText(`L${l+1}`,x,my+26);}
+    });
+  });
+}
+
+function handleCanvasClick(e){
+  if(!currentMap||selectedPath.length>=8)return;
+  const canvas=e.target,rect=canvas.getBoundingClientRect();
+  const sx=CW/rect.width,sy=CH/rect.height;
+  const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;
+  const layers=currentMap.layers;
+  for(let l=0;l<layers.length;l++){
+    for(let i=0;i<layers[l].length;i++){
+      const x=lx(l),y=ny(l,i,layers[l].length);
+      if(Math.hypot(mx-x,my-y)<20){
+        if(selectedPath.length===0&&l===0){selectedPath.push([l,i]);processNode(l,i);renderAll();return;}
+        if(selectedPath.length>0){
+          const last=selectedPath[selectedPath.length-1];
+          if(l===last[0]+1&&layers[last[0]][last[1]].conn.includes(i)){
+            selectedPath.push([l,i]);processNode(l,i);
+            if(l===7){const pt=selectedPath.map(([ll,ii])=>layers[ll][ii].type);runHistory.unshift({pattern:currentMap.pattern.id,path:pt});if(runHistory.length>15)runHistory.pop();}
+            renderAll();return;
+          }
+        }
+      }
+    }
+  }
+}
+
+function processNode(l,i){
+  const node=currentMap.layers[l][i];
+  applyRoomEffect(node.type);
+  // Offer Yantra on Relic rooms
+  if(node.type==="Relic"){setTimeout(()=>offerYantra(),200);}
+  // Chance of Yantra on Vault
+  if(node.type==="Vault"&&Math.random()<0.6){setTimeout(()=>offerYantra(),200);}
+  // Check: ensure player gets at least 4 yantra chances across 8 nodes
+  const filledCount=player.yantra.filter(y=>y!==null).length;
+  const remainingNodes=8-selectedPath.length;
+  if(filledCount<4&&remainingNodes<=3&&node.type!=="Relic"&&node.type!=="Vault"&&node.type!=="Boss"){
+    // Force a yantra offer to ensure 4 slots fillable
+    setTimeout(()=>offerYantra(),300);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// WEIGHT EDITOR
+// ═══════════════════════════════════════════════════
+const PHASE_KEYS=["early","mid","preBoss"];
+function renderWeightEditor(){
+  const phase=PHASE_KEYS[activeWTab];
+  const w=weights[phase];
+  let html='';
+  ROOM_KEYS.forEach(k=>{
+    const rt=RT[k];
+    html+=`<div class="w-row">
+      <span class="w-icon">${rt.icon}</span>
+      <span class="w-label">${k}</span>
+      <input type="range" class="w-slider" min="0" max="100" value="${w[k]}" oninput="updateWeight('${phase}','${k}',this.value)" style="accent-color:${rt.color}">
+      <span class="w-val" style="color:${rt.color}" id="wv_${phase}_${k}">${w[k]}</span>
+    </div>`;
+  });
+  const total=Object.values(w).reduce((s,v)=>s+v,0);
+  html+=`<div style="text-align:right;font-size:10px;color:${total===100?'var(--grn)':'var(--red)'};margin-top:4px">Total: ${total}</div>`;
+  document.getElementById('weightEditor').innerHTML=html;
+}
+
+function updateWeight(phase,key,val){
+  weights[phase][key]=parseInt(val);
+  document.getElementById(`wv_${phase}_${key}`).textContent=val;
+  const total=Object.values(weights[phase]).reduce((s,v)=>s+v,0);
+  const totalEl=document.getElementById('weightEditor').querySelector('div:last-child');
+  if(totalEl){totalEl.style.color=total===100?'var(--grn)':'var(--org)';totalEl.textContent=`Total: ${total}`;}
+}
+
+function switchWTab(idx,btn){
+  activeWTab=idx;
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderWeightEditor();
+}
+
+function resetWeights(){
+  weights=JSON.parse(JSON.stringify(DEFAULT_WEIGHTS));
+  renderWeightEditor();
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════
+function renderPlayerPanel(){
+  const p=player;
+  const hpPct=Math.round(p.hp/p.maxHp*100);
+  const hpColor=hpPct>60?'var(--grn)':hpPct>30?'var(--gold)':'var(--red)';
+  const momPct=Math.round(p.momentum/p.maxMomentum*100);
+  const effAtk=Math.round(p.baseAtk*(1+p.atkMult/100));
+  const effDR=Math.max(0,Math.min(70,p.dmgReduction));
+
+  let html=`
+    <div style="margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:${hpColor}">❤️ HP</span><span style="color:${hpColor};font-weight:700">${p.hp}/${p.maxHp}</span></div>
+      <div class="hp-bar"><div class="hp-fill" style="width:${hpPct}%;background:${hpColor}"></div></div>
+    </div>
+    <div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#60A5FA">⚡ Momentum</span><span style="color:#60A5FA;font-weight:700">${p.momentum}/${p.maxMomentum}</span></div>
+      <div class="momentum-bar"><div class="hp-fill" style="width:${momPct}%;background:linear-gradient(90deg,#3B82F6,#60A5FA);border-radius:3px"></div></div>
+    </div>
+    <div class="stat-row"><span class="stat-label">⚔️ ATK (Base)</span><span class="stat-val">${p.baseAtk}</span></div>
+    <div class="stat-row"><span class="stat-label">📈 ATK Bonus</span><span class="stat-val" style="color:var(--teal)">+${p.atkMult}%</span></div>
+    <div class="stat-row"><span class="stat-label">💥 Effective ATK</span><span class="stat-val" style="color:var(--gold)">${effAtk}</span></div>
+    <div class="stat-row"><span class="stat-label">🛡️ DMG Reduction</span><span class="stat-val" style="color:${effDR>=0?'var(--blu)':'var(--red)'}">${effDR}%</span></div>
+    <div class="stat-row"><span class="stat-label">🔄 Counter DMG</span><span class="stat-val">+${p.counterDmg}%</span></div>
+    <div class="stat-row"><span class="stat-label">🎯 Crit Chance</span><span class="stat-val">${p.critChance}%</span></div>
+    <div class="stat-row"><span class="stat-label">🔧 Parry Ext</span><span class="stat-val">+${p.parryExt.toFixed(2)}s</span></div>
+    <div class="stat-row"><span class="stat-label">💊 Heal Charges</span><span class="stat-val">${p.healCharges}</span></div>
+    <div class="stat-row"><span class="stat-label">💰 Kasap Coin</span><span class="stat-val" style="color:var(--gold)">${p.kasapCoin}</span></div>
+  `;
+  document.getElementById('playerStats').innerHTML=html;
+}
+
+function renderYantraSlots(){
+  let html='';
+  player.yantra.forEach((y,i)=>{
+    if(y){
+      const cc=CAT_COLORS[y.cat];
+      html+=`<div class="yantra-slot filled" style="border-color:${cc}40;background:${cc}08">
+        <span class="slot-num">Slot ${i+1}</span><span class="y-color">${y.color}</span>
+        <div class="y-name" style="color:${cc};margin-top:10px">${y.name}</div>
+        <div style="font-size:9px;color:var(--ft)">${y.sub}</div>
+        <div class="y-effect">${y.effect}</div>
+      </div>`;
+    }else{
+      html+=`<div class="yantra-slot"><span class="slot-num">Slot ${i+1}</span><div style="text-align:center;color:var(--ft);font-size:20px;margin-top:12px">—</div><div style="text-align:center;font-size:10px;color:var(--ft)">ว่าง</div></div>`;
+    }
+  });
+  document.getElementById('yantraSlots').innerHTML=html;
+
+  let summary='';
+  const filled=player.yantra.filter(y=>y!==null).length;
+  summary+=`<span>ใส่แล้ว ${filled}/4</span>`;
+  if(player.synergies.length>0){
+    summary+=` | <span style="color:var(--gold)">⚡ ${player.synergies.join(', ')}</span>`;
+  }
+  document.getElementById('yantraSummary').innerHTML=summary;
+}
+
+function renderMapArea(){
+  if(!currentMap){document.getElementById('emptyState').classList.remove('hidden');document.getElementById('mapArea').classList.add('hidden');return;}
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('mapArea').classList.remove('hidden');
+  document.getElementById('btnReset').style.display='inline-block';
+
+  const m=currentMap,layers=m.layers,flat=layers.flat();
+  const val=validateMap(layers),allPass=val.every(v=>v.ok);
+  const counts={};flat.forEach(n=>{counts[n.type]=(counts[n.type]||0)+1;});
+  const totalNB=flat.length-1;
+  const runDone=selectedPath.length===8;
+
+  let html=`<div class="c" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 12px">
+    <span style="font-size:10px;color:var(--dm)">Pattern</span>
+    <span style="font-weight:700;color:var(--gold);font-size:14px">${m.pattern.id}: ${m.pattern.name}</span>
+    <span style="color:var(--ft)">|</span>
+    <span style="font-size:11px;color:var(--mu);font-family:monospace;letter-spacing:1px">${m.pattern.nodes.slice(0,7).join('→')}→B</span>
+    <span style="color:var(--ft)">|</span>
+    <span style="font-size:11px;color:var(--dm)">${m.pattern.total} nodes</span>
+  </div>`;
+
+  html+=`<div class="map-wrap"><canvas id="mc"></canvas>${selectedPath.length===0?'<div class="map-hint">👆 คลิก Node ใน Layer 1 เพื่อเริ่ม</div>':''}</div>`;
+
+  // Path
+  if(selectedPath.length>0){
+    let chips='';
+    selectedPath.forEach(([l,i],idx)=>{
+      const t=layers[l][i].type,rt=RT[t];
+      chips+=`<span class="path-chip" style="background:${rt.color}18;border:1px solid ${rt.color}40">${rt.icon}<span style="color:${rt.color}">${rt.label}</span></span>`;
+      if(idx<selectedPath.length-1)chips+=`<span class="path-arrow">→</span>`;
+    });
+    html+=`<div class="c"><div class="c-title">🚶 เส้นทาง (${selectedPath.length}/8)</div><div class="path-row">${chips}</div></div>`;
+  }
+
+  if(runDone){
+    const ps={};selectedPath.forEach(([l,i])=>{const t=layers[l][i].type;ps[t]=(ps[t]||0)+1;});
+    let sc='';Object.entries(ps).filter(([t])=>t!=="Boss").forEach(([t,c])=>{const rt=RT[t];sc+=`<span style="padding:3px 10px;border-radius:5px;font-size:11px;background:${rt.color}12;border:1px solid ${rt.color}25">${rt.icon} ${t}: <b style="color:${rt.color}">${c}</b></span>`;});
+    const yFilled=player.yantra.filter(y=>y!==null).length;
+    html+=`<div class="run-done"><div style="font-size:12px;color:var(--grn);font-weight:700;margin-bottom:8px">✅ Run Complete!</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${sc}</div>
+      <div style="margin-top:6px;font-size:11px;color:var(--mu)">Yantra: ${yFilled}/4 | Kasap Coin: ${player.kasapCoin} | HP: ${player.hp}/${player.maxHp}</div>
+    </div>`;
+  }
+
+  // Stats row
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">`;
+  // Distribution
+  let dr='';Object.entries(counts).filter(([t])=>t!=="Boss").sort((a,b)=>b[1]-a[1]).forEach(([t,c])=>{const pct=Math.round(c/totalNB*100),rt=RT[t];dr+=`<div class="dist-row"><span class="dist-icon">${rt.icon}</span><span class="dist-lbl">${t}</span><div class="dist-bar"><div class="dist-fill" style="width:${pct}%;background:${rt.color}"></div></div><span class="dist-n" style="color:${rt.color}">${c}</span></div>`;});
+  html+=`<div class="c"><div class="c-title">📊 การกระจาย</div>${dr}</div>`;
+  // Validation
+  let vr='';val.forEach(v=>{vr+=`<div class="val-row"><span style="color:${v.ok?'var(--grn)':'var(--red)'}">${v.ok?'✓':'✗'}</span><span style="color:${v.ok?'var(--mu)':'#FCA5A5'}">${v.label}</span></div>`;});
+  html+=`<div class="c"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="c-title" style="margin:0">✅ Rules</span><span style="font-size:9px;padding:1px 6px;border-radius:3px;background:${allPass?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};color:${allPass?'var(--grn)':'var(--red)'}">${allPass?'PASS':'FAIL'}</span></div>${vr}</div>`;
+  html+=`</div>`;
+
+  // Layer detail with editable types
+  let trows='';
+  layers.forEach((layer,l)=>{
+    const pi=phaseOf(l),ph=PHASES[pi];
+    let chips='';
+    layer.forEach((n,ni)=>{
+      const rt=RT[n.type];
+      if(n.type==="Boss"){
+        chips+=`<span class="node-chip" style="background:${rt.color}15;border:1px solid ${rt.color}30">${rt.icon}<span style="color:${rt.color}">${rt.label}</span></span>`;
+      }else{
+        let opts='';[...ROOM_KEYS].forEach(k=>{opts+=`<option value="${k}"${k===n.type?' selected':''}>${RT[k].icon} ${k}</option>`;});
+        chips+=`<span class="node-chip" style="background:${rt.color}15;border:1px solid ${rt.color}30">${rt.icon}<select onchange="changeNodeType(${l},${ni},this.value)">${opts}</select></span>`;
+      }
+    });
+    trows+=`<tr><td style="font-weight:700;color:${ph.color}">${l+1}</td><td><span class="phase-tag" style="background:${ph.color}18;color:${ph.color}">${ph.label}</span></td><td style="text-align:center;color:var(--mu)">${layer.length}</td><td>${chips}</td></tr>`;
+  });
+  html+=`<div class="c"><div class="c-title">📋 Node Detail (คลิกเปลี่ยนประเภทได้)</div><table class="lt"><thead><tr><th>L</th><th>ช่วง</th><th style="text-align:center">N</th><th>ประเภทห้อง</th></tr></thead><tbody>${trows}</tbody></table></div>`;
+
+  // History
+  if(runHistory.length>0){
+    let he='';runHistory.forEach((r,i)=>{let ic='';r.path.forEach(t=>{ic+=`<span title="${t}">${RT[t].icon}</span>`;});he+=`<div class="hist-e"><span style="width:20px;color:var(--ft);font-weight:600">#${i+1}</span><span style="width:14px;color:var(--gold);font-weight:600">${r.pattern}</span><div style="display:flex;gap:1px;flex:1">${ic}</div></div>`;});
+    html+=`<div class="c"><div class="c-title">📜 ประวัติ (${runHistory.length})</div>${he}</div>`;
+  }
+
+  document.getElementById('mapArea').innerHTML=html;
+  requestAnimationFrame(()=>{
+    const canvas=document.getElementById('mc');
+    if(canvas){drawMap();canvas.onclick=handleCanvasClick;}
+  });
+}
+
+function changeNodeType(l,ni,newType){
+  if(!currentMap)return;
+  currentMap.layers[l][ni].type=newType;
+  renderMapArea();
+}
+
+function renderAll(){
+  renderMapArea();
+  renderPlayerPanel();
+  renderYantraSlots();
+}
+
+// ═══════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════
+function doGenerate(){
+  const sel=document.getElementById('patSel').value;
+  const pat=sel?PATTERNS.find(p=>p.id===sel):undefined;
+  currentMap=generateMap(pat);
+  selectedPath=[];
+  resetPlayer();
+  renderAll();
+}
+
+function doReset(){
+  selectedPath=[];
+  resetPlayer();
+  renderAll();
+}
+
+// INIT
+(function(){
+  const sel=document.getElementById('patSel');
+  PATTERNS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=`${p.id}: ${p.name}`;sel.appendChild(o);});
+  renderWeightEditor();
+  renderPlayerPanel();
+  renderYantraSlots();
+})();
+</script>
+</body>
+</html>
