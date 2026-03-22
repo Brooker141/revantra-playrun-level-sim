@@ -153,8 +153,16 @@ canvas{display:block;width:100%;border-radius:8px;cursor:pointer;background:var(
 <div class="c"><div class="ct">📊 Batch Results</div><div class="dt-wrap"><table class="dt"><thead><tr><th>#</th><th>Clear%</th><th>AvgRun</th><th>AvgDie</th><th>AvgMin</th><th>Fast</th><th>Slow</th><th>Rm</th><th>Diff</th></tr></thead><tbody id="dtB"></tbody></table></div></div>
 </div></div>
 
-<!-- Modal -->
+<!-- Batch Modal -->
 <div class="modal-ov hidden" id="bM"><div class="modal"><div id="bMT" style="font-size:14px;font-weight:700;margin-bottom:10px"></div><div id="bMB"></div><button class="btn bg" style="width:100%;margin-top:10px" onclick="document.getElementById('bM').classList.add('hidden')">ปิด</button></div></div>
+<!-- Yantra Pick Modal -->
+<div class="modal-ov hidden" id="yM"><div class="modal" style="max-width:520px">
+  <div style="font-size:14px;font-weight:700;margin-bottom:4px" id="yMT">🔮 เลือก Yantra</div>
+  <div style="font-size:9px;color:var(--dm);margin-bottom:10px">กฎ: 🟥 Curse ใส่ได้ <b style="color:var(--red)">1 ช่อง</b> | 🟪 Forbidden ใส่ได้ <b style="color:var(--pur)">1 ช่อง</b> | ใส่ซ้ำประเภทเดียวกัน = <b style="color:var(--red)">OVERLOAD ตาย!</b> | Forbidden มี HP drain ทุกห้องสู้</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;font-size:9px" id="yMSlotPreview"></div>
+  <div id="yMB"></div>
+  <button class="btn bg" style="width:100%;margin-top:8px" onclick="yMSkip()">ข้าม (ไม่เลือก)</button>
+</div></div>
 
 <script>
 // ═══════════════ SHARED DATA ═══════════════
@@ -219,21 +227,164 @@ function doDmg(p,base,rn){
   p.hp=Math.max(0,p.hp-d);return d;
 }
 
-function procRoom(p,type,rn){
+function procRoom(p,type,rn,interactive){
   const tk=type.toLowerCase();p.time+=(TIM[tk]||TIM.combat)*(.85+Math.random()*.3);
   const cm=p.cM;
+  // Forbidden HP drain: -1% max HP per 5s in combat rooms
+  const hasForbiddenY=p.yantra.some(y=>y&&y.cat==='forbidden');
+  if(hasForbiddenY&&["Elite","Boss","Challenge","Gold","Weapon","Upgrade"].includes(type)){
+    const roomDur=TIM[tk]||TIM.combat;const ticks=Math.floor(roomDur/5);
+    const drain=Math.floor(p.mxHp*0.01*ticks);
+    p.hp=Math.max(1,p.hp-drain);// drain but don't kill outright from drain alone
+  }
   switch(type){
     case"Gold":p.coin+=Math.round(rng(25,45)*cm);break;
     case"Weapon":p.bA+=rng(2,5);p.coin+=Math.round(rng(5,10)*cm);break;
     case"Upgrade":p.aM+=rng(5,10);p.coin+=Math.round(rng(5,8)*cm);break;
-    case"Relic":{p.coin+=Math.round(rng(5,10)*cm);const es=p.yantra.findIndex(y=>!y);if(es>=0){p.yantra[es]=YP.filter(y=>y.cat!=="forbidden")[ri(YP.filter(y=>y.cat!=="forbidden"))];aYS(p);}}break;
+    case"Relic":{p.coin+=Math.round(rng(5,10)*cm);if(interactive)return'yantra';autoPickY(p);}break;
     case"Healing":p.hp=Math.min(p.mxHp,p.hp+Math.floor(p.mxHp*.25));break;
     case"Challenge":{doDmg(p,rng(12,25),rn);p.coin+=Math.round(rng(40,70)*cm);p.aM+=rng(5,8);if(p.hp<=0)return true;}break;
-    case"Shop":{p.shops++;const es=p.yantra.findIndex(y=>!y);if(es>=0&&p.coin>=35){p.yantra[es]=YP.filter(y=>y.cat!=="forbidden")[ri(YP.filter(y=>y.cat!=="forbidden"))];p.coin-=35;aYS(p);}if(p.hp<p.mxHp*.5&&p.coin>=30){p.coin-=30;p.hp=Math.min(p.mxHp,p.hp+Math.floor(p.mxHp*.25));}if(p.coin>=50){p.coin-=50;p.bA+=3;}}break;
-    case"Elite":{doDmg(p,rng(18,35),rn);p.coin+=Math.round(rng(25,40)*cm);p.elites++;p.aM+=rng(3,8);if(p.hp<=0)return true;const es=p.yantra.findIndex(y=>!y);if(es>=0&&Math.random()<.4){p.yantra[es]=YP.filter(y=>y.cat!=="forbidden")[ri(YP.filter(y=>y.cat!=="forbidden"))];aYS(p);}}break;
+    case"Shop":{p.shops++;if(interactive)return'shop_yantra';autoShopBuy(p);}break;
+    case"Elite":{doDmg(p,rng(18,35),rn);p.coin+=Math.round(rng(25,40)*cm);p.elites++;p.aM+=rng(3,8);if(p.hp<=0)return true;if(interactive&&Math.random()<.5)return'yantra';if(!interactive&&Math.random()<.4)autoPickY(p);}break;
     case"Boss":{doDmg(p,rng(30,60),rn);if(p.hp>0)doDmg(p,rng(15,35),rn);if(p.hp>0&&getDiff()==='hard')doDmg(p,rng(10,25),rn);if(p.hp<=0)return true;p.boss=true;}break;
   }
   p.mom=Math.min(p.mxM,p.mom+rng(5,15));return false;
+}
+
+// Auto-pick yantra (for auto/batch/multi-run)
+function autoPickY(p){
+  const es=p.yantra.findIndex(y=>!y);if(es<0)return;
+  const hasCurse=p.yantra.some(y=>y&&y.cat==='curse');
+  const hasForbid=p.yantra.some(y=>y&&y.cat==='forbidden');
+  const pool=YP.filter(y=>{
+    if(y.cat==='curse'&&hasCurse)return false; // already have curse
+    if(y.cat==='forbidden'&&hasForbid)return false; // already have forbidden
+    if(y.cat==='forbidden'&&Math.random()>.15)return false; // rare auto-pick forbidden
+    return true;
+  });
+  if(pool.length){p.yantra[es]=pool[ri(pool)];aYS(p);}
+}
+function autoShopBuy(p){
+  const es=p.yantra.findIndex(y=>!y);
+  if(es>=0&&p.coin>=35){
+    const hasCurse=p.yantra.some(y=>y&&y.cat==='curse');
+    const hasForbid=p.yantra.some(y=>y&&y.cat==='forbidden');
+    const pool=YP.filter(y=>{
+      if(y.cat==='curse'&&hasCurse)return false;
+      if(y.cat==='forbidden'&&hasForbid)return false;
+      if(y.cat==='forbidden')return false; // AI doesn't buy forbidden in shop
+      return true;
+    });
+    if(pool.length){p.yantra[es]=pool[ri(pool)];p.coin-=35;aYS(p);}
+  }
+  if(p.hp<p.mxHp*.5&&p.coin>=30){p.coin-=30;p.hp=Math.min(p.mxHp,p.hp+Math.floor(p.mxHp*.25));}
+  if(p.coin>=50){p.coin-=50;p.bA+=3;}
+}
+
+// ═══════ INTERACTIVE YANTRA SELECTION ═══════
+let yMCallback=null; // called after selection
+let yMIsShop=false;
+
+function showYantraModal(p,isShop,callback){
+  yMCallback=callback;yMIsShop=isShop;
+  const filled=p.yantra.filter(y=>y).length;
+  const emptySlot=p.yantra.findIndex(y=>!y);
+  const hasCurse=p.yantra.some(y=>y&&y.cat==='curse');
+  const hasForbidden=p.yantra.some(y=>y&&y.cat==='forbidden');
+  // Generate 3 cards
+  let pool=[...YP];
+  // Always include variety - pick from different cats
+  const picks=[];const cats=['power','synergy','curse'];
+  if(Math.random()<.3)cats.push('forbidden');
+  for(let i=0;i<3&&pool.length;i++){
+    const targetCat=cats[i%cats.length];
+    const fromCat=pool.filter(y=>y.cat===targetCat);
+    const src=fromCat.length?fromCat:pool;
+    const idx=ri(src);const pick=src[idx];
+    picks.push(pick);pool=pool.filter(y=>y.id!==pick.id);
+  }
+  // Render slot preview
+  let slotH='';p.yantra.forEach((y,i)=>{
+    if(y){const cc=CC[y.cat];slotH+=`<div style="padding:3px 5px;background:${cc}10;border:1px solid ${cc}30;border-radius:4px"><span style="font-size:8px;color:var(--ft)">S${i+1}</span> <span style="color:${cc};font-weight:700">${y.c}${y.n}</span></div>`;}
+    else slotH+=`<div style="padding:3px 5px;background:var(--s3);border:1px dashed var(--bd);border-radius:4px;color:var(--ft)"><span style="font-size:8px">S${i+1}</span> ว่าง</div>`;
+  });
+  document.getElementById('yMSlotPreview').innerHTML=slotH;
+  const slotsNeeded=4-filled;
+  document.getElementById('yMT').innerHTML=isShop?'🛒 Shop — เลือก Yantra (ต้องจ่าย 🪙)':
+    `🔮 เลือก Yantra <span style="font-size:10px;color:var(--org)">(ได้ ${filled}/4 — ต้องการอีก ${slotsNeeded})</span>`;
+  // Disable skip if forced (critically need slots)
+  const skipBtn=document.querySelector('#yM .btn.bg:last-child');
+  // Will be set via innerHTML below
+  // Render cards
+  let h='';picks.forEach(y=>{
+    const cc=CC[y.cat];
+    const wouldOverloadCurse=y.cat==='curse'&&hasCurse;
+    const wouldOverloadForbid=y.cat==='forbidden'&&hasForbidden;
+    const wouldOverload=wouldOverloadCurse||wouldOverloadForbid;
+    const canAfford=!isShop||p.coin>=35;
+    const noSlot=emptySlot<0;
+    const price=isShop?35:0;
+
+    let warning='';
+    if(wouldOverload)warning=`<div style="margin-top:3px;padding:2px 6px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:3px;font-size:8px;color:var(--red);font-weight:700">💥 OVERLOAD! ใส่${y.cat==='curse'?'Curse':'Forbidden'}ซ้ำ = ตายทันที!</div>`;
+    else if(y.cat==='curse'&&!hasCurse)warning=`<div style="margin-top:3px;font-size:8px;color:var(--org)">🟥 Curse ใส่ได้แค่ 1 ช่อง${hasForbidden?' (มี Forbidden แล้ว — ยังใส่ Curse ได้)':''}</div>`;
+    else if(y.cat==='forbidden'&&!hasForbidden)warning=`<div style="margin-top:3px;font-size:8px;color:var(--pur)">🟪 Forbidden ใส่ได้แค่ 1 ช่อง — HP drain ระหว่างห้องสู้!${hasCurse?' (มี Curse แล้ว — ยังใส่ Forbidden ได้)':''}</div>`;
+
+    h+=`<div style="background:var(--s3);border-left:3px solid ${cc};border-radius:6px;padding:8px;margin-bottom:6px;cursor:${canAfford?'pointer':'not-allowed'};opacity:${canAfford?1:.5};transition:all .12s" 
+      ${canAfford?`onclick="yMPick('${y.id}')" onmouseover="this.style.borderColor='${cc}'" onmouseout="this.style.borderLeftColor='${cc}'"`:''}
+      >
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:14px">${y.c}</span>
+        <span style="font-size:12px;font-weight:800;color:${cc}">${y.n}</span>
+        <span style="font-size:8px;color:var(--ft)">${y.cat}</span>
+        ${price?`<span style="margin-left:auto;font-size:10px;color:var(--gold);font-weight:700">${price}🪙</span>`:'<span style="margin-left:auto;font-size:9px;color:var(--grn)">FREE</span>'}
+      </div>
+      <div style="font-size:10px;color:var(--mu);margin-top:2px">${y.eff}</div>
+      ${warning}
+    </div>`;
+  });
+  document.getElementById('yMB').innerHTML=h;
+  document.getElementById('yM').classList.remove('hidden');
+}
+
+function yMPick(id){
+  const y=YP.find(yy=>yy.id===id);if(!y)return;
+  const p=S.p;
+  const hasCurse=p.yantra.some(yy=>yy&&yy.cat==='curse');
+  const hasForbidden=p.yantra.some(yy=>yy&&yy.cat==='forbidden');
+  const isCurseType=y.cat==='curse'||y.cat==='forbidden';
+
+  // Shop cost
+  if(yMIsShop){if(p.coin<35)return;p.coin-=35;}
+
+  // OVERLOAD CHECK — Curse max 1, Forbidden max 1 (separately)
+  if((y.cat==='curse'&&hasCurse)||(y.cat==='forbidden'&&hasForbidden)){
+    // OVERLOAD — instant death!
+    const es=p.yantra.findIndex(yy=>!yy);
+    if(es>=0)p.yantra[es]=y;else{p.yantra.push(y);p.yantra.shift();}
+    aYS(p);p.hp=0;p.dead=true;p.overload=true;
+    document.getElementById('yM').classList.add('hidden');
+    if(yMCallback)yMCallback('overload');
+    return;
+  }
+
+  const es=p.yantra.findIndex(yy=>!yy);
+  if(es>=0){p.yantra[es]=y;}
+  else{p.yantra.shift();p.yantra.push(y);}// overwrite oldest
+  aYS(p);
+  document.getElementById('yM').classList.add('hidden');
+  if(yMCallback)yMCallback('picked');
+}
+
+function yMSkip(){
+  document.getElementById('yM').classList.add('hidden');
+  // Shop: still do heal/upgrade
+  if(yMIsShop){
+    const p=S.p;
+    if(p.hp<p.mxHp*.5&&p.coin>=30){p.coin-=30;p.hp=Math.min(p.mxHp,p.hp+Math.floor(p.mxHp*.25));}
+    if(p.coin>=50){p.coin-=50;p.bA+=3;}
+  }
+  if(yMCallback)yMCallback('skipped');
 }
 function autoUpg(){let go=true;while(go){go=false;for(const t of TREE)for(const n of t.nodes){const lv=META.sk[n.id];if(lv<n.mx&&META.pod>=n.co[lv]){META.pod-=n.co[lv];META.sk[n.id]++;go=true;break;}}}}
 
@@ -305,13 +456,56 @@ function s_gen(){S.map=genMap(+document.getElementById('sRooms').value);S.path=[
 function s_reset(){S.path=[];if(S.map)S.p=newP(true);s_render();}
 function s_auto(){
   if(!S.map)s_gen();S.path=[];S.p=newP(true);
-  const m=S.map,rooms=m.rooms,L=m.layers;let cur=ri(L[0]);S.path.push([0,cur]);let died=procRoom(S.p,L[0][cur].type,META.runs);
-  for(let l=1;l<rooms&&!died;l++){const prev=L[l-1][cur];const ni=prev.conn[ri(prev.conn)];S.path.push([l,ni]);died=procRoom(S.p,L[l][ni].type,META.runs);cur=ni;}
+  const m=S.map,rooms=m.rooms,L=m.layers;let cur=ri(L[0]);S.path.push([0,cur]);let died=procRoom(S.p,L[0][cur].type,META.runs,false);
+  for(let l=1;l<rooms&&died!==true;l++){const prev=L[l-1][cur];const ni=prev.conn[ri(prev.conn)];S.path.push([l,ni]);died=procRoom(S.p,L[l][ni].type,META.runs,false);cur=ni;}
   s_record();s_render();
 }
 function s_nodeClick(l,i){
-  S.path.push([l,i]);const died=procRoom(S.p,S.map.layers[l][i].type,META.runs);
-  if(l===S.map.rooms-1||died)s_record();
+  if(S.p.hp<=0||S.p.boss)return; // dead or done
+  S.path.push([l,i]);
+  const type=S.map.layers[l][i].type;
+  const result=procRoom(S.p,type,META.runs,true); // interactive=true
+  
+  if(result==='yantra'||result==='shop_yantra'){
+    // Show yantra selection modal — pause until player picks
+    showYantraModal(S.p,result==='shop_yantra',(action)=>{
+      if(action==='overload'){
+        // Overload death!
+        S.p.hp=0;
+        s_record();s_render();
+        return;
+      }
+      // Check if need to guarantee 4 yantra
+      const filled=S.p.yantra.filter(y=>y).length;
+      const remaining=S.map.rooms-S.path.length;
+      const needMore=4-filled;
+      // Force re-offer if skipped and still need yantra
+      if(needMore>0&&remaining<=needMore+1){
+        // Can't skip — must pick!
+        showYantraModal(S.p,false,(a2)=>{
+          if(a2==='overload'){S.p.hp=0;s_record();}
+          if(l===S.map.rooms-1||S.p.hp<=0)s_record();
+          s_render();
+        });return;
+      }
+      if(l===S.map.rooms-1||S.p.hp<=0)s_record();
+      s_render();
+    });
+    // Render map immediately (before modal response)  
+    s_render();
+    return;
+  }
+  if(result===true||l===S.map.rooms-1)s_record(); // died or finished
+  // Force yantra offer if critically behind on slots
+  const filled2=S.p.yantra.filter(y=>y).length;
+  const remaining2=S.map.rooms-S.path.length;
+  const needMore2=4-filled2;
+  if(needMore2>0&&remaining2<=needMore2&&S.p.hp>0&&!S.p.boss){
+    showYantraModal(S.p,false,(a)=>{
+      if(a==='overload'){S.p.hp=0;s_record();}
+      s_render();
+    });s_render();return;
+  }
   s_render();
 }
 function s_record(){
@@ -338,6 +532,7 @@ function s_render(){
     h+=`</div></div>`;
   }
   if(runDone&&p.boss)h+=`<div class="win-s"><div style="font-size:18px">👑</div><div style="font-weight:800;color:var(--grn)">BOSS CLEARED</div></div>`;
+  else if(runDone&&p.hp<=0&&p.overload)h+=`<div class="death-s"><div style="font-size:18px">💥</div><div style="font-weight:800;color:var(--red)">YANTRA OVERLOAD!</div><div style="font-size:10px;color:var(--mu);margin-top:4px">Curse หรือ Forbidden ซ้อนเกิน 1 ช่อง — พลังยันต์ล้นทำลายร่างภานุ</div><div style="font-size:9px;color:var(--ft);margin-top:2px">กฎ: Curse ใส่ได้แค่ 1 | Forbidden ใส่ได้แค่ 1 | ใส่ซ้ำประเภทเดียวกัน = ตาย</div></div>`;
   else if(runDone&&p.hp<=0)h+=`<div class="death-s"><div style="font-size:18px">💀</div><div style="font-weight:800;color:var(--red)">DEAD at ${types[types.length-1]}</div></div>`;
   document.getElementById('sMapArea').innerHTML=h;
   // Draw canvas after DOM update
@@ -348,8 +543,8 @@ function s_render(){
 
 function s_batch(){
   const rooms=+document.getElementById('sRooms').value;const results=[];
-  for(let r=0;r<100;r++){const m=genMap(rooms);const p=newP(true);let path=[];let cur=ri(m.layers[0]);path.push([0,cur]);let died=procRoom(p,m.layers[0][cur].type,META.runs);
-    for(let l=1;l<rooms&&!died;l++){const prev=m.layers[l-1][cur];const ni=prev.conn[ri(prev.conn)];path.push([l,ni]);died=procRoom(p,m.layers[l][ni].type,META.runs);cur=ni;}
+  for(let r=0;r<100;r++){const m=genMap(rooms);const p=newP(true);let path=[];let cur=ri(m.layers[0]);path.push([0,cur]);let died=procRoom(p,m.layers[0][cur].type,META.runs,false);
+    for(let l=1;l<rooms&&!died;l++){const prev=m.layers[l-1][cur];const ni=prev.conn[ri(prev.conn)];path.push([l,ni]);died=procRoom(p,m.layers[l][ni].type,META.runs,false);cur=ni;}
     const types=path.map(([l,i])=>m.layers[l][i].type);
     results.push({time:p.time,coin:p.coin,hp:Math.round(p.hp/p.mxHp*100),yantra:p.yantra.filter(y=>y).length,shops:p.shops,elites:p.elites,build:types.filter(t=>t==="Upgrade"||t==="Relic").length,ok:p.boss});
     DATA.s.push({run:DATA.s.length+1,pat:m.pat.id,rooms,time:Math.round(p.time),coin:p.coin,hp:p.hp,mxHp:p.mxHp,yantra:p.yantra.filter(y=>y).length,shops:p.shops,elites:p.elites,ok:p.boss,types:types.join('→')});}
@@ -370,8 +565,8 @@ let MR={map:null,path:[],p:null};
 function m_run(){
   META.runs++;const rooms=+document.getElementById('mRooms').value;
   MR.map=genMap(rooms);MR.path=[];MR.p=newP(true);
-  const m=MR.map,L=m.layers;let cur=ri(L[0]);MR.path.push([0,cur]);let died=procRoom(MR.p,L[0][cur].type,META.runs);
-  for(let l=1;l<rooms&&!died;l++){const prev=L[l-1][cur];const ni=prev.conn[ri(prev.conn)];MR.path.push([l,ni]);died=procRoom(MR.p,L[l][ni].type,META.runs);cur=ni;}
+  const m=MR.map,L=m.layers;let cur=ri(L[0]);MR.path.push([0,cur]);let died=procRoom(MR.p,L[0][cur].type,META.runs,false);
+  for(let l=1;l<rooms&&!died;l++){const prev=L[l-1][cur];const ni=prev.conn[ri(prev.conn)];MR.path.push([l,ni]);died=procRoom(MR.p,L[l][ni].type,META.runs,false);cur=ni;}
   META.tTime+=MR.p.time;let pod=0;
   if(MR.p.boss){META.clears++;pod=rng(13,25);if(!META.fc){META.fc=META.runs;META.fct=META.tTime;}}
   else{META.deaths++;const prog=MR.path.length/rooms;pod=prog<.4?rng(3,5):prog<.7?rng(6,10):rng(10,16);}
@@ -436,8 +631,8 @@ function buySk(id){for(const t of TREE)for(const n of t.nodes)if(n.id===id){cons
 function m_b50(){
   const results=[],rooms=+document.getElementById('mRooms').value;
   for(let px=0;px<50;px++){const sv=JSON.parse(JSON.stringify(META));META={pod:0,runs:0,deaths:0,clears:0,tTime:0,sk:{},fc:null,fct:null};TREE.forEach(t=>t.nodes.forEach(n=>{META.sk[n.id]=0;}));
-    while(!META.fc&&META.runs<50){META.runs++;const m=genMap(rooms);const p=newP(true);let path=[],cur=ri(m.layers[0]);path.push([0,cur]);let died=procRoom(p,m.layers[0][cur].type,META.runs);
-      for(let l=1;l<rooms&&!died;l++){const prev=m.layers[l-1][cur];const ni=prev.conn[ri(prev.conn)];path.push([l,ni]);died=procRoom(p,m.layers[l][ni].type,META.runs);cur=ni;}
+    while(!META.fc&&META.runs<50){META.runs++;const m=genMap(rooms);const p=newP(true);let path=[],cur=ri(m.layers[0]);path.push([0,cur]);let died=procRoom(p,m.layers[0][cur].type,META.runs,false);
+      for(let l=1;l<rooms&&!died;l++){const prev=m.layers[l-1][cur];const ni=prev.conn[ri(prev.conn)];path.push([l,ni]);died=procRoom(p,m.layers[l][ni].type,META.runs,false);cur=ni;}
       META.tTime+=p.time;if(p.boss){META.clears++;META.pod+=rng(13,25);if(!META.fc){META.fc=META.runs;META.fct=META.tTime;}}else{META.deaths++;META.pod+=path.length/rooms<.4?rng(3,5):path.length/rooms<.7?rng(6,10):rng(10,16);}autoUpg();}
     results.push({cr:META.fc,ct:META.fct,d:META.deaths,tt:META.tTime});META=JSON.parse(JSON.stringify(sv));}
   const cl=results.filter(r=>r.cr);const avg=k=>{const v=cl.map(r=>r[k]).filter(x=>x!=null);return v.length?Math.round(v.reduce((s,x)=>s+x,0)/v.length*10)/10:0;};
@@ -466,7 +661,13 @@ function renderP(elId,p){
     <div class="sr"><span style="color:var(--mu)">⏱</span><span>${Math.floor(p.time/60)}:${String(Math.floor(p.time%60)).padStart(2,'0')}</span></div>`;
 }
 function renderYS(elId,p){
-  let h='';(p?.yantra||[null,null,null,null]).forEach((y,i)=>{if(y){const cc=CC[y.cat];h+=`<div class="ys-s f" style="border-color:${cc}40;background:${cc}06"><div style="font-size:7px;color:var(--ft);position:absolute;top:1px;left:3px">S${i+1}</div><div style="position:absolute;top:1px;right:3px;font-size:8px">${y.c}</div><div style="font-weight:700;color:${cc};margin-top:8px;font-size:8px">${y.n}</div><div style="font-size:7px;color:var(--mu)">${y.eff}</div></div>`;}else h+=`<div class="ys-s"><div style="font-size:7px;color:var(--ft);position:absolute;top:1px;left:3px">S${i+1}</div><div style="text-align:center;color:var(--ft);font-size:12px;margin-top:8px">—</div></div>`;});
+  let h='';const hC=p?.yantra?.some(y=>y&&y.cat==='curse');const hF=p?.yantra?.some(y=>y&&y.cat==='forbidden');
+  (p?.yantra||[null,null,null,null]).forEach((y,i)=>{if(y){const cc=CC[y.cat];const isDanger=y.cat==='curse'||y.cat==='forbidden';
+    const tag=y.cat==='curse'?'<div style="font-size:6px;background:rgba(239,68,68,.15);color:var(--red);padding:0 3px;border-radius:2px;margin-top:1px;display:inline-block;font-weight:700">🟥 CURSE</div>':y.cat==='forbidden'?'<div style="font-size:6px;background:rgba(139,92,246,.15);color:var(--pur);padding:0 3px;border-radius:2px;margin-top:1px;display:inline-block;font-weight:700">🟪 FORBID +HP drain</div>':'';
+    h+=`<div class="ys-s f" style="border-color:${cc}40;background:${cc}06${isDanger?';box-shadow:inset 0 0 8px '+cc+'15':''}"><div style="font-size:7px;color:var(--ft);position:absolute;top:1px;left:3px">S${i+1}</div><div style="position:absolute;top:1px;right:3px;font-size:8px">${y.c}</div><div style="font-weight:700;color:${cc};margin-top:8px;font-size:8px">${y.n}</div><div style="font-size:7px;color:var(--mu)">${y.eff}</div>${tag}</div>`;}
+  else h+=`<div class="ys-s"><div style="font-size:7px;color:var(--ft);position:absolute;top:1px;left:3px">S${i+1}</div><div style="text-align:center;color:var(--ft);font-size:12px;margin-top:8px">—</div></div>`;});
+  const filled=p?.yantra?.filter(y=>y).length||0;
+  h+=`<div style="grid-column:1/-1;font-size:8px;color:var(--dm);margin-top:2px">${filled}/4 ${hC?'<span style="color:var(--red)">🟥Curse×1</span> ':''}${hF?'<span style="color:var(--pur)">🟪Forbidden×1</span> ':''}${!hC&&!hF?'<span style="color:var(--dm)">(Curse:0 Forbid:0)</span>':''}${p?.syn?.length?' <span style="color:var(--gold)">⚡'+p.syn.join(',')+'</span>':''}</div>`;
   document.getElementById(elId).innerHTML=h;
 }
 
