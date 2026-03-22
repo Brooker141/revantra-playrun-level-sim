@@ -63,6 +63,12 @@ canvas{display:block;width:100%;border-radius:8px;cursor:pointer;background:var(
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
 .modal{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;max-width:650px;width:94%;max-height:82vh;overflow-y:auto}
 .hidden{display:none}
+/* Death condition rows */
+.dc-row{display:flex;align-items:center;gap:6px;padding:4px 6px;margin-bottom:3px;background:var(--s3);border-radius:4px;cursor:pointer;font-size:10px;border:1px solid transparent;transition:all .12s}
+.dc-row:hover{border-color:var(--bd)}
+.dc-row input[type=checkbox]{width:14px;height:14px;accent-color:var(--red);flex-shrink:0;cursor:pointer}
+.dc-row span:nth-child(2){font-weight:600;color:var(--mu);flex-shrink:0;width:160px}
+.dc-desc{font-size:8px;color:var(--ft);flex:1}
 /* Map hint overlay */
 .map-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);border-radius:4px;padding:2px 10px;font-size:9px;color:#FCD34D;pointer-events:none;white-space:nowrap}
 .map-w{position:relative;margin-bottom:8px}
@@ -105,6 +111,20 @@ canvas{display:block;width:100%;border-radius:8px;cursor:pointer;background:var(
 <div>
   <div class="c"><div class="ct">👤 Player</div><div id="sPStats"></div></div>
   <div class="c"><div class="ct">🔮 Yantra</div><div class="ys" id="sYSlots"></div></div>
+  <!-- DEATH CONDITIONS -->
+  <div class="c" style="border-color:rgba(239,68,68,.2)">
+    <div class="ct" style="color:var(--red)">💀 เงื่อนไขการตาย (Toggle เปิด/ปิด)</div>
+    <div style="font-size:9px;color:var(--dm);margin-bottom:6px">เลือกเงื่อนไขที่จะทำให้จบ Run ทันที</div>
+    <label class="dc-row"><input type="checkbox" id="dc_hp0" checked onchange="updDC()"><span>❤️ HP ≤ 0</span><span class="dc-desc">ถูกตีจนเลือดหมด (พื้นฐาน)</span></label>
+    <label class="dc-row"><input type="checkbox" id="dc_overload" checked onchange="updDC()"><span>💥 Yantra Overload</span><span class="dc-desc">Curse ซ้ำ หรือ Forbidden ซ้ำ</span></label>
+    <label class="dc-row"><input type="checkbox" id="dc_forbidDrain" checked onchange="updDC()"><span>🟪 Forbidden HP Drain</span><span class="dc-desc">-1% HP/5s ในห้องสู้ (ถ้ามี Forbidden)</span></label>
+    <label class="dc-row"><input type="checkbox" id="dc_noHeal" onchange="updDC()"><span>💊 Heal Charges = 0 + HP < 20%</span><span class="dc-desc">หมดยา + เลือดต่ำวิกฤต</span></label>
+    <label class="dc-row"><input type="checkbox" id="dc_greed" onchange="updDC()"><span>💰 Greed Death</span><span class="dc-desc">เข้า Challenge/Elite ตอน HP < 30%</span></label>
+    <label class="dc-row"><input type="checkbox" id="dc_momentum" onchange="updDC()"><span>⚡ Momentum Collapse</span><span class="dc-desc">Momentum = 0 นาน 3 ห้องติด → Grounded Death</span></label>
+    <label class="dc-row"><input type="checkbox" id="dc_cursePile" onchange="updDC()"><span>🟥 Curse Accumulate</span><span class="dc-desc">มี Curse + HP < 25% → พิษสะสมฆ่า</span></label>
+    <label class="dc-row"><input type="checkbox" id="dc_time" onchange="updDC()"><span>⏱️ Time Limit</span><span class="dc-desc">เกิน 15 นาที → ยักษ์เงาไล่ล่า (ตาย)</span></label>
+    <div id="dcActive" style="font-size:8px;color:var(--dm);margin-top:6px"></div>
+  </div>
   <div class="c"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="ct" style="margin:0">⚖️ Weights</div><button class="btn bg" style="padding:2px 6px;font-size:8px" onclick="resetW()">Default</button></div><div class="wtabs" id="wTabs"></div><div id="wEdit"></div></div>
   <div class="c"><div class="ct">⏱ Timing(s)</div><div id="timEdit"></div></div>
 </div>
@@ -186,6 +206,40 @@ TREE.forEach(t=>t.nodes.forEach(n=>{META.sk[n.id]=0;}));
 function mLv(){return Object.values(META.sk).reduce((s,v)=>s+v,0);}
 let DATA={s:[],m:[],b:[]};
 
+// ═══════════════ DEATH CONDITIONS ═══════════════
+let DC={hp0:true,overload:true,forbidDrain:true,noHeal:false,greed:false,momentum:false,cursePile:false,time:false};
+function updDC(){
+  DC.hp0=document.getElementById('dc_hp0')?.checked??true;
+  DC.overload=document.getElementById('dc_overload')?.checked??true;
+  DC.forbidDrain=document.getElementById('dc_forbidDrain')?.checked??true;
+  DC.noHeal=document.getElementById('dc_noHeal')?.checked??false;
+  DC.greed=document.getElementById('dc_greed')?.checked??false;
+  DC.momentum=document.getElementById('dc_momentum')?.checked??false;
+  DC.cursePile=document.getElementById('dc_cursePile')?.checked??false;
+  DC.time=document.getElementById('dc_time')?.checked??false;
+  const active=Object.entries(DC).filter(([,v])=>v).length;
+  const el=document.getElementById('dcActive');
+  if(el)el.innerHTML=`เงื่อนไขที่เปิด: <b style="color:var(--red)">${active}</b>/8`;
+}
+// Check all death conditions on a player — returns {died:bool, cause:string}
+function checkDeath(p,type){
+  // HP = 0
+  if(DC.hp0&&p.hp<=0)return{died:true,cause:'HP ≤ 0'};
+  // Overload (handled separately in yantra pick)
+  if(DC.overload&&p.overload)return{died:true,cause:'Yantra Overload'};
+  // No heal + low HP
+  if(DC.noHeal&&p.hCh<=0&&p.hp<p.mxHp*0.2)return{died:true,cause:'No Heal + HP < 20%'};
+  // Greed: entered risky room with low HP
+  if(DC.greed&&(type==='Challenge'||type==='Elite')&&p.hp<p.mxHp*0.3)return{died:true,cause:'Greed Death (HP<30% + '+type+')'};
+  // Curse accumulate
+  if(DC.cursePile&&p.yantra.some(y=>y&&y.cat==='curse')&&p.hp<p.mxHp*0.25)return{died:true,cause:'Curse Poison (HP<25%)'};
+  // Time limit (15 min = 900s)
+  if(DC.time&&p.time>900)return{died:true,cause:'Time Limit (>15m)'};
+  // Momentum collapse: tracked via momZeroStreak
+  if(DC.momentum&&(p.momZero||0)>=3)return{died:true,cause:'Momentum Collapse (0 × 3 rooms)'};
+  return{died:false,cause:''};
+}
+
 // ═══════════════ UTILS ═══════════════
 const ri=a=>Math.floor(Math.random()*a.length);
 const rng=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
@@ -230,25 +284,34 @@ function doDmg(p,base,rn){
 function procRoom(p,type,rn,interactive){
   const tk=type.toLowerCase();p.time+=(TIM[tk]||TIM.combat)*(.85+Math.random()*.3);
   const cm=p.cM;
-  // Forbidden HP drain: -1% max HP per 5s in combat rooms
-  const hasForbiddenY=p.yantra.some(y=>y&&y.cat==='forbidden');
+  // Forbidden HP drain
+  const hasForbiddenY=DC.forbidDrain&&p.yantra.some(y=>y&&y.cat==='forbidden');
   if(hasForbiddenY&&["Elite","Boss","Challenge","Gold","Weapon","Upgrade"].includes(type)){
     const roomDur=TIM[tk]||TIM.combat;const ticks=Math.floor(roomDur/5);
     const drain=Math.floor(p.mxHp*0.01*ticks);
-    p.hp=Math.max(1,p.hp-drain);// drain but don't kill outright from drain alone
+    p.hp=Math.max(1,p.hp-drain);
   }
+  // Pre-room death check (Greed: entering dangerous room at low HP)
+  const preDeath=checkDeath(p,type);
+  if(preDeath.died){p.hp=0;p.dead=true;p.deathCause=preDeath.cause;return true;}
   switch(type){
     case"Gold":p.coin+=Math.round(rng(25,45)*cm);break;
     case"Weapon":p.bA+=rng(2,5);p.coin+=Math.round(rng(5,10)*cm);break;
     case"Upgrade":p.aM+=rng(5,10);p.coin+=Math.round(rng(5,8)*cm);break;
     case"Relic":{p.coin+=Math.round(rng(5,10)*cm);if(interactive)return'yantra';autoPickY(p);}break;
     case"Healing":p.hp=Math.min(p.mxHp,p.hp+Math.floor(p.mxHp*.25));break;
-    case"Challenge":{doDmg(p,rng(12,25),rn);p.coin+=Math.round(rng(40,70)*cm);p.aM+=rng(5,8);if(p.hp<=0)return true;}break;
+    case"Challenge":{doDmg(p,rng(12,25),rn);p.coin+=Math.round(rng(40,70)*cm);p.aM+=rng(5,8);}break;
     case"Shop":{p.shops++;if(interactive)return'shop_yantra';autoShopBuy(p);}break;
-    case"Elite":{doDmg(p,rng(18,35),rn);p.coin+=Math.round(rng(25,40)*cm);p.elites++;p.aM+=rng(3,8);if(p.hp<=0)return true;if(interactive&&Math.random()<.5)return'yantra';if(!interactive&&Math.random()<.4)autoPickY(p);}break;
-    case"Boss":{doDmg(p,rng(30,60),rn);if(p.hp>0)doDmg(p,rng(15,35),rn);if(p.hp>0&&getDiff()==='hard')doDmg(p,rng(10,25),rn);if(p.hp<=0)return true;p.boss=true;}break;
+    case"Elite":{doDmg(p,rng(18,35),rn);p.coin+=Math.round(rng(25,40)*cm);p.elites++;p.aM+=rng(3,8);if(p.hp>0&&interactive&&Math.random()<.5)return'yantra';if(p.hp>0&&!interactive&&Math.random()<.4)autoPickY(p);}break;
+    case"Boss":{doDmg(p,rng(30,60),rn);if(p.hp>0)doDmg(p,rng(15,35),rn);if(p.hp>0&&getDiff()==='hard')doDmg(p,rng(10,25),rn);if(p.hp>0)p.boss=true;}break;
   }
-  p.mom=Math.min(p.mxM,p.mom+rng(5,15));return false;
+  // Momentum tracking
+  const momGain=rng(5,15);p.mom=Math.min(p.mxM,p.mom+momGain);
+  if(p.mom<=0)p.momZero=(p.momZero||0)+1;else p.momZero=0;
+  // Post-room death check (all conditions)
+  const postDeath=checkDeath(p,type);
+  if(postDeath.died){p.hp=0;p.dead=true;p.deathCause=postDeath.cause;return true;}
+  return false;
 }
 
 // Auto-pick yantra (for auto/batch/multi-run)
@@ -510,8 +573,8 @@ function s_nodeClick(l,i){
 }
 function s_record(){
   const p=S.p,types=S.path.map(([l,i])=>S.map.layers[l][i].type);
-  DATA.s.push({run:DATA.s.length+1,pat:S.map.pat.id,rooms:S.map.rooms,time:Math.round(p.time),coin:p.coin,hp:p.hp,mxHp:p.mxHp,yantra:p.yantra.filter(y=>y).length,shops:p.shops,elites:p.elites,ok:p.boss,types:types.join('→')});
-  updDC();
+  DATA.s.push({run:DATA.s.length+1,pat:S.map.pat.id,rooms:S.map.rooms,time:Math.round(p.time),coin:p.coin,hp:p.hp,mxHp:p.mxHp,yantra:p.yantra.filter(y=>y).length,shops:p.shops,elites:p.elites,ok:p.boss,types:types.join('→'),deathCause:p.deathCause||''});
+  updDataC();
 }
 
 function s_render(){
@@ -533,7 +596,7 @@ function s_render(){
   }
   if(runDone&&p.boss)h+=`<div class="win-s"><div style="font-size:18px">👑</div><div style="font-weight:800;color:var(--grn)">BOSS CLEARED</div></div>`;
   else if(runDone&&p.hp<=0&&p.overload)h+=`<div class="death-s"><div style="font-size:18px">💥</div><div style="font-weight:800;color:var(--red)">YANTRA OVERLOAD!</div><div style="font-size:10px;color:var(--mu);margin-top:4px">Curse หรือ Forbidden ซ้อนเกิน 1 ช่อง — พลังยันต์ล้นทำลายร่างภานุ</div><div style="font-size:9px;color:var(--ft);margin-top:2px">กฎ: Curse ใส่ได้แค่ 1 | Forbidden ใส่ได้แค่ 1 | ใส่ซ้ำประเภทเดียวกัน = ตาย</div></div>`;
-  else if(runDone&&p.hp<=0)h+=`<div class="death-s"><div style="font-size:18px">💀</div><div style="font-weight:800;color:var(--red)">DEAD at ${types[types.length-1]}</div></div>`;
+  else if(runDone&&p.hp<=0)h+=`<div class="death-s"><div style="font-size:18px">💀</div><div style="font-weight:800;color:var(--red)">YOU DIED</div><div style="font-size:11px;color:var(--org);margin-top:4px">${p.deathCause||('ตายที่ '+types[types.length-1])}</div><div style="font-size:9px;color:var(--ft);margin-top:2px">ห้อง ${S.path.length}/${m.rooms} | HP: 0/${p.mxHp}</div></div>`;
   document.getElementById('sMapArea').innerHTML=h;
   // Draw canvas after DOM update
   requestAnimationFrame(()=>{const cv=document.getElementById('sCv');if(cv){drawMap('sCv',m,S.path);cv.onclick=e=>canvasClick(e,S.map,S.path,s_nodeClick);}});
@@ -548,7 +611,7 @@ function s_batch(){
     const types=path.map(([l,i])=>m.layers[l][i].type);
     results.push({time:p.time,coin:p.coin,hp:Math.round(p.hp/p.mxHp*100),yantra:p.yantra.filter(y=>y).length,shops:p.shops,elites:p.elites,build:types.filter(t=>t==="Upgrade"||t==="Relic").length,ok:p.boss});
     DATA.s.push({run:DATA.s.length+1,pat:m.pat.id,rooms,time:Math.round(p.time),coin:p.coin,hp:p.hp,mxHp:p.mxHp,yantra:p.yantra.filter(y=>y).length,shops:p.shops,elites:p.elites,ok:p.boss,types:types.join('→')});}
-  updDC();
+  updDataC();
   const BN={totalTime:{min:480,max:900,l:"Time(s)"},kasapCoin:{min:250,max:600,l:"Kasap"},yantra:{min:3,max:4,l:"Yantra"},shops:{min:1,max:2,l:"Shop"},elites:{min:1,max:3,l:"Elite"},hp:{min:20,max:80,l:"HP%"},build:{min:2,max:6,l:"Build"}};
   const avg=k=>{const v=results.map(r=>r[k]);return Math.round(v.reduce((s,x)=>s+x,0)/v.length*10)/10;};
   const data={totalTime:avg('time'),kasapCoin:avg('coin'),hp:avg('hp'),yantra:avg('yantra'),shops:avg('shops'),elites:avg('elites'),build:avg('build')};
@@ -573,7 +636,7 @@ function m_run(){
   META.pod+=pod;autoUpg();
   const types=MR.path.map(([l,i])=>L[l][i].type);
   DATA.m.push({run:META.runs,ok:MR.p.boss,prog:`${MR.path.length}/${rooms}`,time:Math.round(MR.p.time),coin:MR.p.coin,hp:MR.p.hp,mxHp:MR.p.mxHp,yantra:MR.p.yantra.filter(y=>y).length,pod,mlv:mLv(),died:!MR.p.boss?types[types.length-1]:'—',types:types.join('→')});
-  updDC();m_addLog(DATA.m[DATA.m.length-1]);m_renderAll();
+  updDataC();m_addLog(DATA.m[DATA.m.length-1]);m_renderAll();
 }
 function m_auto(){let mx=50;while(!META.fc&&META.runs<mx)m_run();if(!META.fc)for(let i=0;i<20&&!META.fc;i++)m_run();}
 function m_reset(){META={pod:0,runs:0,deaths:0,clears:0,tTime:0,sk:{},fc:null,fct:null};TREE.forEach(t=>t.nodes.forEach(n=>{META.sk[n.id]=0;}));MR={map:null,path:[],p:null};document.getElementById('mLog').innerHTML='<div style="color:var(--ft);text-align:center;padding:14px">กดเล่นเพื่อเริ่ม</div>';document.getElementById('mStatus').innerHTML='';document.getElementById('mSummary').innerHTML='';document.getElementById('mMapArea').innerHTML='';m_renderAll();}
@@ -636,7 +699,7 @@ function m_b50(){
       META.tTime+=p.time;if(p.boss){META.clears++;META.pod+=rng(13,25);if(!META.fc){META.fc=META.runs;META.fct=META.tTime;}}else{META.deaths++;META.pod+=path.length/rooms<.4?rng(3,5):path.length/rooms<.7?rng(6,10):rng(10,16);}autoUpg();}
     results.push({cr:META.fc,ct:META.fct,d:META.deaths,tt:META.tTime});META=JSON.parse(JSON.stringify(sv));}
   const cl=results.filter(r=>r.cr);const avg=k=>{const v=cl.map(r=>r[k]).filter(x=>x!=null);return v.length?Math.round(v.reduce((s,x)=>s+x,0)/v.length*10)/10:0;};
-  DATA.b.push({set:DATA.b.length+1,cr:Math.round(cl.length/50*100),ar:avg('cr'),ad:avg('d'),at:Math.round(avg('ct')/60),f:cl.length?Math.min(...cl.map(r=>r.cr)):'-',sl:cl.length?Math.max(...cl.map(r=>r.cr)):'-',rm:rooms,df:getDiff()});updDC();
+  DATA.b.push({set:DATA.b.length+1,cr:Math.round(cl.length/50*100),ar:avg('cr'),ad:avg('d'),at:Math.round(avg('ct')/60),f:cl.length?Math.min(...cl.map(r=>r.cr)):'-',sl:cl.length?Math.max(...cl.map(r=>r.cr)):'-',rm:rooms,df:getDiff()});updDataC();
   const avgCR=avg('cr'),inR=avgCR>=5&&avgCR<=15;
   const hist={};cl.forEach(r=>{hist[r.cr]=(hist[r.cr]||0)+1;});const maxH=Math.max(...Object.values(hist),1);
   let bh=`<div class="bench"><div class="bc"><div class="bc-l">ClearRate</div><div class="bc-v" style="color:${cl.length/50>=.8?'var(--grn)':'var(--org)'}">${Math.round(cl.length/50*100)}%</div></div>
@@ -673,14 +736,42 @@ function renderYS(elId,p){
 
 // ═══════════════ WEIGHT/TIMING EDITORS ═══════════════
 const PK=["early","mid","preBoss"];let wTab=0;
-function renderWE(){const ph=PK[wTab],w=W[ph];let h='';RK.forEach(k=>{const r=RT[k];h+=`<div class="w-row"><span style="width:14px;font-size:10px">${r.i}</span><span style="width:38px;color:var(--mu)">${k}</span><input type="range" min="0" max="60" value="${w[k]}" oninput="W['${ph}']['${k}']=+this.value;this.nextElementSibling.textContent=this.value" style="accent-color:${r.c}"><span style="width:18px;text-align:right;color:${r.c};font-weight:700;font-size:8px">${w[k]}</span></div>`;});document.getElementById('wEdit').innerHTML=h;}
+function renderWE(){
+  const ph=PK[wTab],w=W[ph];
+  const total=Object.values(w).reduce((s,v)=>s+v,0);
+  const phLabel=['🟦 Early (L1-3)','🟧 Mid (L4-6)','🟩 Pre-Boss (L7)'][wTab];
+  const phColor=[PH[0].c,PH[1].c,PH[2].c][wTab];
+  let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:3px 6px;background:var(--s3);border-radius:4px">
+    <span style="font-size:9px;font-weight:700;color:${phColor}">${phLabel}</span>
+    <span style="font-size:9px;font-weight:700;color:${total===100?'var(--grn)':total>100?'var(--red)':'var(--org)'}">Total: ${total} ${total===100?'✓':'⚠'}</span></div>`;
+  RK.forEach(k=>{
+    const r=RT[k];const val=w[k];const pct=total>0?Math.round(val/total*100):0;
+    h+=`<div class="w-row">
+      <span style="width:14px;font-size:10px">${r.i}</span>
+      <span style="width:38px;color:var(--mu);font-size:9px">${k}</span>
+      <input type="range" min="0" max="60" value="${val}" oninput="W['${ph}']['${k}']=+this.value;renderWE()" style="accent-color:${r.c}">
+      <span style="width:22px;text-align:right;color:${r.c};font-weight:700;font-size:9px">${val}</span>
+      <span style="width:26px;text-align:right;font-size:7px;color:var(--ft)">${pct}%</span>
+    </div>`;
+  });
+  // Quick overview of all 3 phases
+  h+=`<div style="margin-top:6px;padding:4px 6px;background:var(--s3);border-radius:4px;font-size:8px;color:var(--dm)">`;
+  PK.forEach((pk,i)=>{
+    const t=Object.values(W[pk]).reduce((s,v)=>s+v,0);
+    const c=[PH[0].c,PH[1].c,PH[2].c][i];
+    const ok=t===100;
+    h+=`<span style="margin-right:8px;color:${ok?'var(--grn)':'var(--org)'}"><span style="color:${c};font-weight:700">${['Early','Mid','Pre-B'][i]}</span> ${t} ${ok?'✓':'⚠'}</span>`;
+  });
+  h+=`</div>`;
+  document.getElementById('wEdit').innerHTML=h;
+}
 function swWT(i){wTab=i;document.querySelectorAll('#wTabs .wtab').forEach((t,j)=>t.classList.toggle('on',j===i));renderWE();}
 function resetW(){W=JSON.parse(JSON.stringify(DW));renderWE();}
 function renderTE(){const lb={combat:"⚔️Cmbt",elite:"💀Elite",boss:"👹Boss",shop:"🛒Shop",healing:"❤️Heal",gold:"💰Gold",weapon:"⚔️Wpn",upgrade:"⬆️Up",relic:"🔮Relic",challenge:"⚠️Chall"};let h='';Object.entries(TIM).forEach(([k,v])=>{h+=`<div class="w-row"><span style="width:52px;font-size:8px">${lb[k]||k}</span><input type="number" value="${v}" min="5" max="600" style="width:38px;background:var(--s3);color:var(--tx);border:1px solid var(--bd);border-radius:3px;padding:1px 2px;font-size:9px;text-align:center" onchange="TIM['${k}']=+this.value"><span style="font-size:7px;color:var(--dm)">s</span></div>`;});document.getElementById('timEdit').innerHTML=h;}
 
 // ═══════════════ TAB / DATA / EXPORT ═══════════════
 function swTab(i){document.querySelectorAll('.main-tab').forEach((t,j)=>t.classList.toggle('on',j===i));document.querySelectorAll('.tc').forEach((t,j)=>t.classList.toggle('on',j===i));if(i===2)renderDT();}
-function updDC(){document.getElementById('dcS').textContent=DATA.s.length;document.getElementById('dcM').textContent=DATA.m.length;document.getElementById('dcB').textContent=DATA.b.length;}
+function updDataC(){document.getElementById('dcS').textContent=DATA.s.length;document.getElementById('dcM').textContent=DATA.m.length;document.getElementById('dcB').textContent=DATA.b.length;}
 function renderDT(){
   document.getElementById('dtS').innerHTML=DATA.s.map(d=>`<tr><td>${d.run}</td><td>${d.pat}</td><td>${d.rooms}</td><td>${Math.floor(d.time/60)}:${String(Math.floor(d.time%60)).padStart(2,'0')}</td><td>${d.coin}</td><td>${d.hp}/${d.mxHp}</td><td>${d.yantra}</td><td>${d.shops}</td><td>${d.elites}</td><td>${d.ok?'✅':'💀'}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.types}</td></tr>`).join('');
   document.getElementById('dtM').innerHTML=DATA.m.map(d=>`<tr><td>${d.run}</td><td style="color:${d.ok?'var(--grn)':'var(--red)'}">${d.ok?'✅':'💀'}</td><td>${d.prog}</td><td>${d.time}</td><td>${d.coin}</td><td>${d.hp}/${d.mxHp}</td><td>${d.yantra}</td><td>+${d.pod}</td><td>${d.mlv}</td><td>${d.died}</td><td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.types}</td></tr>`).join('');
@@ -698,7 +789,7 @@ function exportCSV(type){
 // ═══════════════ INIT ═══════════════
 (function(){
   let th='';PK.forEach((p,i)=>{th+=`<div class="wtab${i===0?' on':''}" onclick="swWT(${i})">${['Early','Mid','Pre-B'][i]}</div>`;});
-  document.getElementById('wTabs').innerHTML=th;renderWE();renderTE();s_render();m_renderAll();updDC();
+  document.getElementById('wTabs').innerHTML=th;renderWE();renderTE();s_render();m_renderAll();updDataC();
 })();
 </script>
 </body>
