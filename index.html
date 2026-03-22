@@ -3,766 +3,501 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>REVANTRA: ASURA FALL — Node Map Simulator v2</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<title>REVANTRA — Simulator Hub v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#080C18;--s1:#141B2D;--s2:#1E293B;--s3:#0F172A;
-  --bd:#2D3748;--tx:#E2E8F0;--mu:#94A3B8;--dm:#64748B;--ft:#475569;
-  --gold:#F59E0B;--red:#EF4444;--grn:#22C55E;--blu:#3B82F6;--org:#F97316;
-  --teal:#10B981;--pur:#8B5CF6;--pink:#EC4899;--dpurp:#6D28D9;
-}
-body{background:var(--bg);color:var(--tx);font-family:'Sarabun','Segoe UI',sans-serif;min-height:100vh;font-size:14px}
-button{font-family:inherit;cursor:pointer;border:none}
-select,input{font-family:inherit}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:var(--s3)}
-::-webkit-scrollbar-thumb{background:var(--ft);border-radius:3px}
-
-/* HEADER */
-.hdr{background:linear-gradient(135deg,#1E0A2E,#0F172A 50%,#1A0A0A);border-bottom:1px solid var(--bd);padding:16px 20px}
-.hdr-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px}
-.hdr h1{font-size:20px;font-weight:800;background:linear-gradient(90deg,#F59E0B,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hdr-sub{font-size:12px;color:var(--mu)}
-
-/* LAYOUT */
-.wrap{max-width:1200px;margin:0 auto;padding:16px 12px}
-.grid-main{display:grid;grid-template-columns:1fr 340px;gap:14px}
-@media(max-width:900px){.grid-main{grid-template-columns:1fr}}
-
-/* CARD */
-.c{background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:12px;border:1px solid transparent}
-.c-title{font-size:11px;color:var(--dm);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
-
-/* BUTTONS */
-.btn{padding:8px 18px;border-radius:7px;font-weight:700;font-size:13px;transition:all .12s}
-.btn-fire{background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;box-shadow:0 3px 12px rgba(245,158,11,0.3)}
-.btn-fire:hover{transform:scale(1.03);box-shadow:0 5px 18px rgba(245,158,11,0.4)}
-.btn-fire:active{transform:scale(0.97)}
-.btn-ghost{background:var(--s3);color:var(--mu);border:1px solid var(--bd);padding:6px 14px;font-size:12px}
-.btn-ghost:hover{background:var(--s2)}
-.btn-sm{padding:4px 10px;font-size:10px;border-radius:5px}
-
-/* CONTROLS */
-.ctrl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-.sel{padding:5px 8px;background:var(--s3);color:var(--tx);border:1px solid var(--bd);border-radius:5px;font-size:12px}
-
-/* CANVAS */
-.map-wrap{position:relative;margin-bottom:12px}
-canvas{display:block;width:100%;border-radius:10px;cursor:pointer}
-.map-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:5px;padding:3px 12px;font-size:10px;color:#FCD34D;white-space:nowrap;pointer-events:none}
-
-/* TABS */
-.tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--bd);padding-bottom:0}
-.tab{padding:6px 14px;font-size:12px;font-weight:600;color:var(--dm);background:transparent;border-bottom:2px solid transparent;transition:all .15s}
-.tab:hover{color:var(--mu)}
-.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
-
-/* WEIGHT EDITOR */
-.w-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px}
-.w-icon{width:20px;text-align:center;flex-shrink:0}
-.w-label{width:60px;color:var(--mu);flex-shrink:0}
-.w-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bd);outline:none}
-.w-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;cursor:pointer}
-.w-val{width:32px;text-align:right;font-weight:600;flex-shrink:0}
-.w-section{margin-bottom:10px}
-.w-section-title{font-size:10px;font-weight:700;margin-bottom:6px;padding:3px 8px;border-radius:4px;display:inline-block}
-
-/* PLAYER PANEL */
-.stat-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid #1a2436}
-.stat-label{color:var(--mu)}
-.stat-val{font-weight:700}
-.hp-bar{height:10px;background:var(--s3);border-radius:5px;overflow:hidden;margin:4px 0}
-.hp-fill{height:100%;border-radius:5px;transition:width .4s}
-.momentum-bar{height:6px;background:var(--s3);border-radius:3px;overflow:hidden;margin:3px 0}
-
-/* YANTRA SLOTS */
-.yantra-slots{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
-.yantra-slot{background:var(--s3);border:2px dashed var(--bd);border-radius:8px;padding:8px;min-height:70px;position:relative;transition:all .2s}
-.yantra-slot.filled{border-style:solid}
-.yantra-slot .slot-num{position:absolute;top:4px;left:6px;font-size:9px;color:var(--ft);font-weight:700}
-.yantra-slot .y-name{font-size:11px;font-weight:700;margin-bottom:2px}
-.yantra-slot .y-effect{font-size:10px;color:var(--mu)}
-.yantra-slot .y-color{position:absolute;top:4px;right:6px;font-size:12px}
-
-/* YANTRA PICK MODAL */
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.modal{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
-.modal-title{font-size:15px;font-weight:700;margin-bottom:12px}
-.yantra-pick{background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:all .15s}
-.yantra-pick:hover{border-color:var(--gold);background:#1a2a3a}
-.yantra-pick .yp-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.yantra-pick .yp-id{font-size:10px;color:var(--ft);font-weight:600}
-.yantra-pick .yp-name{font-size:13px;font-weight:700}
-.yantra-pick .yp-effect{font-size:11px;color:var(--mu)}
-.yantra-pick .yp-lore{font-size:10px;color:var(--ft);font-style:italic;margin-top:2px}
-
-/* PATH */
-.path-row{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.path-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600}
-.path-arrow{color:var(--ft);font-size:10px}
-
-/* DISTRIBUTION */
-.dist-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
-.dist-icon{width:18px;font-size:12px;text-align:center;flex-shrink:0}
-.dist-lbl{width:55px;font-size:10px;color:var(--mu);flex-shrink:0}
-.dist-bar{flex:1;height:6px;background:var(--s3);border-radius:3px;overflow:hidden}
-.dist-fill{height:100%;border-radius:3px;transition:width .4s}
-.dist-n{width:22px;font-size:10px;font-weight:700;text-align:right;flex-shrink:0}
-
-/* VALIDATION */
-.val-row{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:11px}
-
-/* LAYER TABLE */
-.lt{width:100%;border-collapse:collapse;font-size:11px}
-.lt th{padding:5px 6px;text-align:left;color:var(--dm);font-weight:600;border-bottom:1px solid var(--bd);font-size:10px}
-.lt td{padding:4px 6px;border-bottom:1px solid #151d2e}
-.phase-tag{padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700}
-.node-chip{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:3px;font-size:10px;margin:1px;cursor:pointer;transition:background .15s}
-.node-chip:hover{filter:brightness(1.3)}
-.node-chip select{background:transparent;border:none;color:inherit;font-size:10px;font-family:inherit;font-weight:600;cursor:pointer;padding:0}
-.node-chip select option{background:var(--s2);color:var(--tx)}
-
-/* HISTORY */
-.hist-e{display:flex;align-items:center;gap:5px;margin-bottom:4px;padding:4px 8px;background:var(--s3);border-radius:5px;font-size:11px}
-
-/* Run complete banner */
-.run-done{padding:12px;background:linear-gradient(135deg,#0a2a1a,#0a1a2a);border-radius:10px;border:1px solid rgba(34,197,94,0.2);margin-bottom:12px}
-
+:root{--bg:#060A14;--s1:#0E1525;--s2:#1A2332;--s3:#0C1220;--bd:#253040;--tx:#E2E8F0;--mu:#94A3B8;--dm:#64748B;--ft:#3E4C5E;
+--gold:#F59E0B;--red:#EF4444;--grn:#22C55E;--blu:#3B82F6;--org:#F97316;--teal:#10B981;--pur:#8B5CF6;--pink:#EC4899;--cyan:#06B6D4}
+body{background:var(--bg);color:var(--tx);font-family:'Sarabun',sans-serif;font-size:13px}
+button{font-family:inherit;cursor:pointer;border:none}select,input{font-family:inherit}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--s3)}::-webkit-scrollbar-thumb{background:var(--ft);border-radius:3px}
+.mono{font-family:'JetBrains Mono',monospace}
+.hdr{background:linear-gradient(135deg,#1a0828,#0a1428 60%,#180a0a);border-bottom:1px solid var(--bd);padding:10px 16px}
+.hdr-in{max-width:1320px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hdr h1{font-size:17px;font-weight:800;background:linear-gradient(90deg,#F59E0B,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.main-tabs{display:flex;background:var(--s1);border-bottom:2px solid var(--bd);position:sticky;top:0;z-index:50}
+.main-tab{flex:1;padding:10px;text-align:center;font-weight:700;font-size:12px;color:var(--dm);cursor:pointer;border-bottom:3px solid transparent;transition:all .15s}
+.main-tab:hover{color:var(--mu)}.main-tab.on{color:var(--gold);border-bottom-color:var(--gold);background:var(--s2)}
+.wrap{max-width:1320px;margin:0 auto;padding:12px 10px}
+.tc{display:none}.tc.on{display:block}
+.g2{display:grid;grid-template-columns:1fr 300px;gap:10px}
+@media(max-width:960px){.g2{grid-template-columns:1fr}}
+.c{background:var(--s2);border-radius:8px;padding:10px 12px;margin-bottom:9px;border:1px solid var(--bd)}
+.ct{font-size:9px;color:var(--dm);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.btn{padding:6px 14px;border-radius:6px;font-weight:700;font-size:11px;transition:all .1s;display:inline-flex;align-items:center;gap:4px}
+.bf{background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;box-shadow:0 2px 8px rgba(245,158,11,.2)}
+.bf:hover{transform:scale(1.02)}.bf:active{transform:scale(.97)}
+.bg{background:var(--s3);color:var(--mu);border:1px solid var(--bd);font-size:10px;padding:5px 11px;border-radius:5px}
+.bg:hover{background:var(--s2)}
+.bx{background:linear-gradient(135deg,#10B981,#06B6D4);color:#fff;box-shadow:0 2px 6px rgba(16,185,129,.15)}
+.sel{padding:3px 6px;background:var(--s3);color:var(--tx);border:1px solid var(--bd);border-radius:4px;font-size:10px}
+.sr{display:flex;justify-content:space-between;padding:2px 0;font-size:10px;border-bottom:1px solid #141e2e}
+.bar-w{height:7px;background:var(--s3);border-radius:4px;overflow:hidden;margin:2px 0}
+.bar-f{height:100%;border-radius:4px;transition:width .3s}
+canvas{display:block;width:100%;border-radius:8px;cursor:pointer;background:var(--s3)}
+.w-row{display:flex;align-items:center;gap:4px;margin-bottom:3px;font-size:9px}
+.w-row input[type=range]{flex:1;height:3px;-webkit-appearance:none;background:var(--bd);border-radius:2px;outline:none}
+.w-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;cursor:pointer}
+.wtabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);margin-bottom:6px}
+.wtab{padding:4px 10px;font-size:10px;font-weight:600;color:var(--dm);cursor:pointer;border-bottom:2px solid transparent}
+.wtab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.ys{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.ys-s{background:var(--s3);border:1.5px dashed var(--bd);border-radius:6px;padding:5px;min-height:48px;position:relative;font-size:9px}
+.ys-s.f{border-style:solid}
+.bench{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
+.bc{background:var(--s3);border-radius:6px;padding:7px;text-align:center;border:1px solid var(--bd)}
+.bc-v{font-size:17px;font-weight:800;margin:2px 0}.bc-l{font-size:7px;color:var(--dm);text-transform:uppercase}
+.bc-t{font-size:7px;margin-top:2px;padding:1px 4px;border-radius:2px;display:inline-block}
+.rl{max-height:260px;overflow-y:auto}
+.rl-e{padding:4px 7px;background:var(--s3);border-radius:4px;margin-bottom:3px;font-size:10px;border-left:3px solid var(--bd)}
+.rl-e.dead{border-left-color:var(--red)}.rl-e.win{border-left-color:var(--grn)}
+.mt-node{display:flex;align-items:center;gap:5px;padding:3px 5px;background:var(--s3);border-radius:4px;margin-bottom:2px;font-size:9px;cursor:pointer;border:1px solid var(--bd);transition:all .12s}
+.mt-node:hover{border-color:var(--gold)}.mt-node.mx{opacity:.5;cursor:default}
+.mt-bar{flex:1;height:3px;background:var(--bd);border-radius:2px;overflow:hidden}.mt-fill{height:100%;border-radius:2px}
+.death-s{background:linear-gradient(135deg,#1a0808,#0a0a1a);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:12px;text-align:center;margin-bottom:8px}
+.win-s{background:linear-gradient(135deg,#081a0a,#0a1a18);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:12px;text-align:center;margin-bottom:8px}
+.dt{width:100%;border-collapse:collapse;font-size:9px}.dt th{padding:4px 5px;background:var(--s3);color:var(--dm);font-weight:700;border:1px solid var(--bd);position:sticky;top:0}
+.dt td{padding:3px 5px;border:1px solid #1a2436;color:var(--mu)}.dt tr:hover td{background:var(--s3)}
+.dt-wrap{max-height:350px;overflow:auto;border-radius:6px;border:1px solid var(--bd)}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;max-width:650px;width:94%;max-height:82vh;overflow-y:auto}
 .hidden{display:none}
+/* Map hint overlay */
+.map-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);border-radius:4px;padding:2px 10px;font-size:9px;color:#FCD34D;pointer-events:none;white-space:nowrap}
+.map-w{position:relative;margin-bottom:8px}
+/* Path chips */
+.pchip{display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
+.parr{color:var(--ft);font-size:8px;margin:0 1px}
 </style>
 </head>
 <body>
 
 <div class="hdr"><div class="hdr-in">
-  <span style="font-size:24px">🗺️</span>
-  <div><h1>REVANTRA: ASURA FALL</h1><div class="hdr-sub">Node Map Simulator v2 — Weight Editor + Yantra System + Player Status</div></div>
+  <span style="font-size:20px">🎮</span>
+  <div><h1>REVANTRA: ASURA FALL — Simulator Hub</h1><div style="font-size:10px;color:var(--mu)">Interactive Node Map + Multi-Run + Data Export</div></div>
+  <div style="margin-left:auto"><button class="btn bx" onclick="exportCSV('all')">📥 Export All</button></div>
 </div></div>
 
-<div class="wrap">
-  <div class="ctrl-row">
-    <button class="btn btn-fire" onclick="doGenerate()">🎲 สุ่ม Run ใหม่</button>
-    <button class="btn btn-ghost" id="btnReset" onclick="doReset()" style="display:none">↺ รีเซ็ต</button>
-    <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-      <span style="font-size:10px;color:var(--dm)">Pattern:</span>
-      <select class="sel" id="patSel"><option value="">สุ่ม</option></select>
-    </div>
-  </div>
-
-  <div class="grid-main">
-    <!-- LEFT COL -->
-    <div id="leftCol">
-      <div id="emptyState" class="c" style="text-align:center;padding:60px 20px;color:var(--ft)">
-        <div style="font-size:40px;margin-bottom:12px">🗺️</div>
-        <p style="font-size:14px">กด "สุ่ม Run ใหม่" เพื่อเริ่ม</p>
-        <p style="font-size:11px;color:var(--bd);margin-top:4px">ปรับ Weight ได้ที่แผงด้านขวา</p>
-      </div>
-      <div id="mapArea" class="hidden"></div>
-    </div>
-
-    <!-- RIGHT COL: Player + Weight Editor -->
-    <div id="rightCol">
-      <!-- Player Status -->
-      <div class="c" id="playerPanel">
-        <div class="c-title">👤 Player Status — ภานุ</div>
-        <div id="playerStats"></div>
-      </div>
-
-      <!-- Yantra Slots -->
-      <div class="c">
-        <div class="c-title">🔮 Yantra Slots (4 ช่อง)</div>
-        <div class="yantra-slots" id="yantraSlots"></div>
-        <div id="yantraSummary" style="font-size:10px;color:var(--dm);margin-top:4px"></div>
-      </div>
-
-      <!-- Weight Editor -->
-      <div class="c">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="c-title" style="margin:0">⚖️ Weight Editor</div>
-          <button class="btn btn-ghost btn-sm" onclick="resetWeights()">รีเซ็ต Default</button>
-        </div>
-        <div class="tabs">
-          <button class="tab active" onclick="switchWTab(0,this)">Early</button>
-          <button class="tab" onclick="switchWTab(1,this)">Mid</button>
-          <button class="tab" onclick="switchWTab(2,this)">Pre-Boss</button>
-        </div>
-        <div id="weightEditor"></div>
-      </div>
-    </div>
-  </div>
+<div class="main-tabs">
+  <div class="main-tab on" onclick="swTab(0)">🗺️ Single Run</div>
+  <div class="main-tab" onclick="swTab(1)">💀 Multi-Run</div>
+  <div class="main-tab" onclick="swTab(2)">📊 Data</div>
 </div>
 
-<!-- Yantra Pick Modal -->
-<div class="modal-overlay hidden" id="yantraModal">
-  <div class="modal">
-    <div class="modal-title" id="yantraModalTitle">🔮 เลือก Yantra</div>
-    <div id="yantraModalBody"></div>
-    <button class="btn btn-ghost" style="margin-top:10px;width:100%" onclick="closeYantraModal()">ข้าม (ไม่เลือก)</button>
-  </div>
+<!-- ===== TAB 0: SINGLE RUN ===== -->
+<div class="tc on" id="t0"><div class="wrap">
+<div class="c" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:7px 10px">
+  <button class="btn bf" onclick="s_gen()">🎲 สุ่ม Map</button>
+  <button class="btn bg" onclick="s_reset()">↺ รีเซ็ต Path</button>
+  <button class="btn bg" onclick="s_auto()">⚡ Auto-Run</button>
+  <button class="btn bg" onclick="s_batch()">📊 Batch 100</button>
+  <span style="color:var(--ft)">|</span>
+  <label style="font-size:9px;color:var(--dm)">ห้อง:</label>
+  <select class="sel" id="sRooms"><option value="8" selected>8</option><option value="10">10</option><option value="12">12</option></select>
+  <span style="font-size:9px;color:var(--dm)">Meta Lv:<b style="color:var(--gold)" id="sMetaLv">0</b></span>
 </div>
+<div class="g2">
+<div>
+  <div id="sMapArea"><div class="c" style="text-align:center;padding:40px;color:var(--ft)"><div style="font-size:30px;margin-bottom:6px">🗺️</div><p>กด "สุ่ม Map" → คลิก Node เพื่อเลือกเส้นทาง</p></div></div>
+  <div id="sBench" class="hidden"></div>
+</div>
+<div>
+  <div class="c"><div class="ct">👤 Player</div><div id="sPStats"></div></div>
+  <div class="c"><div class="ct">🔮 Yantra</div><div class="ys" id="sYSlots"></div></div>
+  <div class="c"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="ct" style="margin:0">⚖️ Weights</div><button class="btn bg" style="padding:2px 6px;font-size:8px" onclick="resetW()">Default</button></div><div class="wtabs" id="wTabs"></div><div id="wEdit"></div></div>
+  <div class="c"><div class="ct">⏱ Timing(s)</div><div id="timEdit"></div></div>
+</div>
+</div></div></div>
+
+<!-- ===== TAB 1: MULTI-RUN ===== -->
+<div class="tc" id="t1"><div class="wrap">
+<div class="c" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:7px 10px">
+  <button class="btn bf" onclick="m_run()">▶️ Run ถัดไป</button>
+  <button class="btn bg" onclick="m_auto()">⚡ Auto จน Clear</button>
+  <button class="btn bg" onclick="m_b50()">📊 Batch 50</button>
+  <button class="btn bg" onclick="m_reset()">🔄 รีเซ็ต</button>
+  <span style="color:var(--ft)">|</span>
+  <label style="font-size:9px;color:var(--dm)">ห้อง:</label>
+  <select class="sel" id="mRooms"><option value="8">8</option><option value="10">10</option><option value="12">12</option></select>
+  <label style="font-size:9px;color:var(--dm)">Diff:</label>
+  <select class="sel" id="mDiff"><option value="normal">Normal</option><option value="hard">Hard</option><option value="easy">Easy</option></select>
+</div>
+<div class="g2">
+<div>
+  <div id="mStatus"></div>
+  <div id="mMapArea"></div>
+  <div id="mSummary"></div>
+  <div class="c"><div class="ct">📜 Run Log</div><div class="rl" id="mLog"><div style="color:var(--ft);text-align:center;padding:14px">กดเล่นเพื่อเริ่ม</div></div></div>
+</div>
+<div>
+  <div class="c" id="mMeta"></div>
+  <div class="c"><div class="ct">👤 Player</div><div id="mPStats"></div></div>
+  <div class="c"><div class="ct">🔮 Yantra</div><div class="ys" id="mYSlots"></div></div>
+  <div class="c"><div class="ct">🌀 Skill Tree</div><div id="mTree"></div></div>
+</div>
+</div></div></div>
+
+<!-- ===== TAB 2: DATA ===== -->
+<div class="tc" id="t2"><div class="wrap">
+<div class="c" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:7px 10px">
+  <button class="btn bx" onclick="exportCSV('single')">📥 Single Runs</button>
+  <button class="btn bx" onclick="exportCSV('multi')">📥 Multi-Runs</button>
+  <button class="btn bx" onclick="exportCSV('batch')">📥 Batch</button>
+  <button class="btn bx" onclick="exportCSV('all')">📥 All</button>
+  <span style="color:var(--ft)">|</span>
+  <span style="font-size:9px;color:var(--dm)">S:<b id="dcS">0</b> M:<b id="dcM">0</b> B:<b id="dcB">0</b></span>
+</div>
+<div class="c"><div class="ct">🗺️ Single Run Records</div><div class="dt-wrap"><table class="dt"><thead><tr><th>#</th><th>Pat</th><th>Rm</th><th>Time</th><th>🪙</th><th>HP</th><th>🔮</th><th>🛒</th><th>💀</th><th>✅</th><th>Path</th></tr></thead><tbody id="dtS"></tbody></table></div></div>
+<div class="c"><div class="ct">💀 Multi-Run Records</div><div class="dt-wrap"><table class="dt"><thead><tr><th>Run</th><th>Res</th><th>Prog</th><th>Time</th><th>🪙</th><th>HP</th><th>🔮</th><th>🌀+</th><th>MLv</th><th>Died@</th><th>Path</th></tr></thead><tbody id="dtM"></tbody></table></div></div>
+<div class="c"><div class="ct">📊 Batch Results</div><div class="dt-wrap"><table class="dt"><thead><tr><th>#</th><th>Clear%</th><th>AvgRun</th><th>AvgDie</th><th>AvgMin</th><th>Fast</th><th>Slow</th><th>Rm</th><th>Diff</th></tr></thead><tbody id="dtB"></tbody></table></div></div>
+</div></div>
+
+<!-- Modal -->
+<div class="modal-ov hidden" id="bM"><div class="modal"><div id="bMT" style="font-size:14px;font-weight:700;margin-bottom:10px"></div><div id="bMB"></div><button class="btn bg" style="width:100%;margin-top:10px" onclick="document.getElementById('bM').classList.add('hidden')">ปิด</button></div></div>
 
 <script>
-// ═══════════════════════════════════════════════════
-// DATA
-// ═══════════════════════════════════════════════════
-const PATTERNS=[
-  {id:"A",nodes:[3,2,2,3,2,2,2,1],name:"Wide Open",total:17},
-  {id:"B",nodes:[2,3,2,2,3,2,2,1],name:"Twin Peak",total:16},
-  {id:"C",nodes:[3,2,3,2,2,3,2,1],name:"Triple Wave",total:17},
-  {id:"D",nodes:[2,2,3,3,2,2,2,1],name:"Late Bloom",total:16},
-  {id:"E",nodes:[3,3,2,2,2,2,2,1],name:"Early Spread",total:16},
-];
+// ═══════════════ SHARED DATA ═══════════════
+const RT={Gold:{i:"💰",c:"#F59E0B"},Weapon:{i:"⚔️",c:"#EF4444"},Upgrade:{i:"⬆️",c:"#10B981"},Relic:{i:"🔮",c:"#8B5CF6"},Healing:{i:"❤️",c:"#EC4899"},Challenge:{i:"⚠️",c:"#F97316"},Shop:{i:"🛒",c:"#06B6D4"},Elite:{i:"💀",c:"#DC2626"},Boss:{i:"👹",c:"#DC2626"}};
+const RK=["Gold","Weapon","Upgrade","Relic","Healing","Challenge","Shop","Elite"];
+let W={early:{Gold:28,Weapon:18,Upgrade:10,Relic:8,Healing:8,Challenge:4,Shop:10,Elite:14},mid:{Challenge:16,Upgrade:14,Relic:14,Weapon:8,Gold:6,Healing:6,Shop:10,Elite:20},preBoss:{Healing:35,Upgrade:18,Gold:10,Relic:10,Shop:12,Elite:10,Challenge:0,Weapon:5}};
+const DW=JSON.parse(JSON.stringify(W));
+let TIM={combat:40,elite:80,boss:200,shop:25,healing:8,gold:12,weapon:18,upgrade:12,relic:12,challenge:55};
+const YP=[{id:"P01",n:"ลมปราณ",cat:"power",c:"🟦",eff:"Mom+20%",s:{mG:20}},{id:"P02",n:"แสงสุริยะ",cat:"power",c:"🟦",eff:"DR+15%",s:{dr:15}},{id:"P04",n:"พาลี",cat:"power",c:"🟦",eff:"ATK+15%",s:{atk:15}},{id:"P05",n:"หนุมาน",cat:"power",c:"🟦",eff:"Pole+20%",s:{pole:20}},
+{id:"S01",n:"ปีกวายุ",cat:"synergy",c:"🟨",eff:"Dash+15%",s:{dash:15},pair:"S02",bonus:"พายุคลั่ง"},{id:"S02",n:"ตาพายุ",cat:"synergy",c:"🟨",eff:"AirMom",s:{aM:1},pair:"S01",bonus:"พายุคลั่ง"},
+{id:"S03",n:"สุริยัน",cat:"synergy",c:"🟨",eff:"ParryM+5",s:{pM:5},pair:"S04",bonus:"แสงเงา"},{id:"S04",n:"จันทรา",cat:"synergy",c:"🟨",eff:"Cnt+15%",s:{cD:15},pair:"S03",bonus:"แสงเงา"},
+{id:"C01",n:"กุมภกรรณ์",cat:"curse",c:"🟥",eff:"ATK+40%",s:{atk:40}},{id:"C02",n:"โลหิต",cat:"curse",c:"🟥",eff:"Cnt+50%",s:{cD:50}},{id:"C03",n:"พิเภก",cat:"curse",c:"🟥",eff:"Crit+30%",s:{crit:30}},
+{id:"F01",n:"มหาอันตรคาม",cat:"forbidden",c:"🟪",eff:"ATKx2.5",s:{atk:150}}];
+const CC={power:"#3B82F6",curse:"#EF4444",synergy:"#F59E0B",forbidden:"#8B5CF6"};
+const TREE=[{path:"Vitality",color:"#22C55E",nodes:[{id:"v1",nm:"ร่างวานร",eff:"HP+10",mx:5,co:[8,15,25,35,50],ap:p=>{p.mxHp+=10;p.hp+=10;}},{id:"v2",nm:"น้ำเต้า",eff:"Heal+1",mx:2,co:[40,90],ap:p=>{p.hCh++;}},{id:"v3",nm:"หนังเหนียว",eff:"DR+5%",mx:3,co:[60,120,200],ap:p=>{p.mDR+=5;}}]},
+{path:"Combat",color:"#EF4444",nodes:[{id:"c1",nm:"สัญชาตญาณ",eff:"ATK+2",mx:5,co:[10,20,35,50,70],ap:p=>{p.bA+=2;}},{id:"c2",nm:"พริ้วไหว",eff:"Mom+5%",mx:4,co:[30,60,100,140],ap:p=>{p.mMG+=5;}},{id:"c3",nm:"สวนกลับ",eff:"Cnt+15%",mx:3,co:[80,160,250],ap:p=>{p.mCD+=15;}}]},
+{path:"World",color:"#F59E0B",nodes:[{id:"w1",nm:"โชควานร",eff:"Coin+5%",mx:3,co:[15,30,50],ap:p=>{p.cM+=.05;}},{id:"w2",nm:"ยันต์เริ่ม",eff:"+1Y",mx:1,co:[80],ap:p=>{p.sY=true;}}]}];
 
-const RT={
-  Gold:{icon:"💰",color:"#F59E0B",label:"Gold"},
-  Weapon:{icon:"⚔️",color:"#EF4444",label:"Weapon"},
-  Upgrade:{icon:"⬆️",color:"#10B981",label:"Upgrade"},
-  Relic:{icon:"🔮",color:"#8B5CF6",label:"Relic"},
-  Healing:{icon:"❤️",color:"#EC4899",label:"Healing"},
-  Challenge:{icon:"⚠️",color:"#F97316",label:"Challenge"},
-  Vault:{icon:"👑",color:"#6D28D9",label:"Vault"},
-  Boss:{icon:"👹",color:"#DC2626",label:"Boss"},
-};
-const ROOM_KEYS=["Gold","Weapon","Upgrade","Relic","Healing","Challenge","Vault"];
+let META={pod:0,runs:0,deaths:0,clears:0,tTime:0,sk:{},fc:null,fct:null};
+TREE.forEach(t=>t.nodes.forEach(n=>{META.sk[n.id]=0;}));
+function mLv(){return Object.values(META.sk).reduce((s,v)=>s+v,0);}
+let DATA={s:[],m:[],b:[]};
 
-const PHASES=[
-  {start:0,end:2,bg:"rgba(59,130,246,0.07)",border:"#3B82F6",label:"EARLY",color:"#3B82F6"},
-  {start:3,end:5,bg:"rgba(249,115,22,0.07)",border:"#F97316",label:"MID",color:"#F97316"},
-  {start:6,end:6,bg:"rgba(16,185,129,0.07)",border:"#10B981",label:"PRE-BOSS",color:"#10B981"},
-  {start:7,end:7,bg:"rgba(220,38,38,0.07)",border:"#DC2626",label:"BOSS",color:"#DC2626"},
-];
+// ═══════════════ UTILS ═══════════════
+const ri=a=>Math.floor(Math.random()*a.length);
+const rng=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function wR(w){const e=Object.entries(w).filter(([,v])=>v>0);const t=e.reduce((s,[,v])=>s+v,0);let r=Math.random()*t;for(const[k,v]of e){r-=v;if(r<=0)return k;}return e.length?e[e.length-1][0]:"Gold";}
+function pW(l,tl){const e=Math.floor(tl*.375),m=tl-2;return l<e?{...W.early}:l<m?{...W.mid}:{...W.preBoss};}
+function phOf(l,tl){const e=Math.floor(tl*.375),m=tl-2;return l<e?0:l<m?1:l<tl-1?2:3;}
+const PH=[{c:"#3B82F6",l:"EARLY",bg:"rgba(59,130,246,.06)"},{c:"#F97316",l:"MID",bg:"rgba(249,115,22,.06)"},{c:"#10B981",l:"PRE-B",bg:"rgba(16,185,129,.06)"},{c:"#DC2626",l:"BOSS",bg:"rgba(220,38,38,.06)"}];
 
-// Yantra Pool
-const YANTRA_POOL=[
-  {id:"P01",name:"ยันต์ลมปราณ",sub:"Aetherflow",cat:"power",color:"🟦",effect:"Momentum Gain +20%",stat:{momentumGain:20},lore:"ลมหายใจสุดท้ายของวานรนักรบ"},
-  {id:"P02",name:"ยันต์แสงสุริยะ",sub:"Radiance",cat:"power",color:"🟦",effect:"Damage Reduction +15%",stat:{dmgReduction:15},lore:"แสงแห่งการปกป้องจากทวยเทพ"},
-  {id:"P03",name:"ยันต์ตาข่ายฟ้า",sub:"Sky Net",cat:"power",color:"🟦",effect:"Parry Window +0.02s",stat:{parryExt:0.02},lore:"วิชาตั้งรับของเทวดาที่ยักษ์ริบไป"},
-  {id:"P04",name:"ยันต์พาลี",sub:"Vali's Might",cat:"power",color:"🟦",effect:"Base ATK +15%",stat:{atkMult:15},lore:"พลังพญาพาลี ชิงกำลังครึ่งหนึ่งของศัตรู"},
-  {id:"P05",name:"ยันต์หนุมาน",sub:"White Vanguard",cat:"power",color:"🟦",effect:"Pole Spin DMG +20%",stat:{poleSpinDmg:20},lore:"หนุมาน เทพวานรแห่งความเร็ว"},
-  {id:"P06",name:"ยันต์ครุฑ",sub:"Sky Tyrant",cat:"power",color:"🟦",effect:"Ground Smash Bounce 100%",stat:{smashBounce:100},lore:"ขนนกเกล็ดเลือดพญาครุฑ"},
-  {id:"P07",name:"ยันต์เพลิงสุริยะ",sub:"Solarflare",cat:"power",color:"🟦",effect:"Perfect Parry → AoE 2m",stat:{parryAoe:2},lore:"เปลวไฟดวงอาทิตย์โบราณ"},
-  {id:"P08",name:"ยันต์ดวงดาว",sub:"Star Gazer",cat:"power",color:"🟦",effect:"Star Soul +15%, Shard +10%",stat:{soulDrop:15,shardMult:10},lore:"คำทำนายโหรหลวง"},
-  {id:"S01",name:"ยันต์ปีกวายุ",sub:"Gale Wing",cat:"synergy",color:"🟨",effect:"Dash Distance +15%",stat:{dashDist:15},lore:"ปีกลมของเทพวายุ",pair:"S02",bonus:"พายุคลั่ง: Sky Vault สร้างพายุหมุนดูดศัตรู 4m"},
-  {id:"S02",name:"ยันต์ตาพายุ",sub:"Eye of Storm",cat:"synergy",color:"🟨",effect:"Momentum ไม่ลดขณะ Airborne",stat:{airMomentum:true},lore:"แกนกลางพายุที่สงบนิ่ง",pair:"S01",bonus:"พายุคลั่ง: Sky Vault สร้างพายุหมุนดูดศัตรู 4m"},
-  {id:"S03",name:"ยันต์สุริยันฉาย",sub:"Sun's Ray",cat:"synergy",color:"🟨",effect:"Perfect Parry → Momentum +5",stat:{parryMomentum:5},lore:"แสงสุริยันที่ไม่มีวันดับ",pair:"S04",bonus:"แสงและเงา: Perfect Parry ฟื้น HP 2%"},
-  {id:"S04",name:"ยันต์จันทราฉาย",sub:"Moon's Shadow",cat:"synergy",color:"🟨",effect:"Counter DMG +15%",stat:{counterDmg:15},lore:"เงาจันทราที่ซ่อนความมืด",pair:"S03",bonus:"แสงและเงา: Perfect Parry ฟื้น HP 2%"},
-  {id:"C01",name:"ยันต์กุมภกรรณ์",sub:"Slumber",cat:"curse",color:"🟥",effect:"ATK +40%, Momentum ลดเร็ว 2x เมื่อนิ่ง",stat:{atkMult:40,momentumDecay:-100},lore:"พลังหลับใหลของกุมภกรรณ์"},
-  {id:"C02",name:"ยันต์โลหิต",sub:"Blood Oath",cat:"curse",color:"🟥",effect:"Counter +50%, Max HP -15%",stat:{counterDmg:50,maxHp:-15},lore:"สัญญาเลือดที่ห้ามทำลาย"},
-  {id:"C03",name:"ยันต์พิเภก",sub:"Seer's Curse",cat:"curse",color:"🟥",effect:"Crit +30%, DMG Reduction -20%",stat:{critChance:30,dmgReduction:-20},lore:"ดวงตาที่เห็นอนาคตแต่รับความจริงไม่ได้"},
-  {id:"C04",name:"ยันต์ทศกัณฐ์",sub:"Ten Faces",cat:"curse",color:"🟥",effect:"รอดตาย 1 ครั้ง (HP 50%) แต่เสีย Heal ทั้งหมด",stat:{revive:1,healCharges:-99},lore:"หน้ากากทั้งสิบของราวณะ"},
-  {id:"F01",name:"ยันต์มหาอันตรคาม",sub:"Void",cat:"forbidden",color:"🟪",effect:"ATK x2.5, HP ลด 1%/5s ในห้องสู้",stat:{atkMult:150,hpDrain:true},lore:"ความว่างเปล่าที่กลืนทุกสิ่ง"},
-  {id:"F02",name:"ยันต์สัญญาของมาร",sub:"Devil's Pact",cat:"forbidden",color:"🟪",effect:"ศัตรู <15% HP ตายทันที, ภานู <10% HP ตายทันที",stat:{execute:15,selfExecute:10},lore:"สัญญากับมารที่ไม่อาจถอน"},
-];
-
-const CAT_COLORS={power:"#3B82F6",curse:"#EF4444",synergy:"#F59E0B",forbidden:"#8B5CF6"};
-
-// ═══════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════
-let weights={
-  early:{Gold:35,Weapon:25,Upgrade:15,Relic:10,Healing:10,Challenge:5,Vault:0},
-  mid:{Challenge:25,Upgrade:20,Relic:20,Weapon:15,Gold:10,Healing:5,Vault:5},
-  preBoss:{Healing:50,Upgrade:25,Gold:15,Relic:10,Challenge:0,Weapon:0,Vault:0},
-};
-const DEFAULT_WEIGHTS=JSON.parse(JSON.stringify(weights));
-let currentMap=null, selectedPath=[], runHistory=[];
-let activeWTab=0;
-
-// Player state
-let player={
-  maxHp:100,hp:100,
-  baseAtk:20,atkMult:0,
-  counterDmg:0,dmgReduction:0,
-  momentum:0,maxMomentum:100,momentumGain:0,
-  critChance:5,critDmgMult:150,
-  parryExt:0,healCharges:3,
-  kasapCoin:0,
-  yantra:[null,null,null,null],
-  synergies:[],
-};
-function resetPlayer(){
-  player={maxHp:100,hp:100,baseAtk:20,atkMult:0,counterDmg:0,dmgReduction:0,
-    momentum:0,maxMomentum:100,momentumGain:0,critChance:5,critDmgMult:150,
-    parryExt:0,healCharges:3,kasapCoin:0,yantra:[null,null,null,null],synergies:[]};
-}
-
-// ═══════════════════════════════════════════════════
-// MAP GENERATION
-// ═══════════════════════════════════════════════════
-function wRand(w){
-  const e=Object.entries(w).filter(([,v])=>v>0);
-  const t=e.reduce((s,[,v])=>s+v,0);
-  let r=Math.random()*t;
-  for(const[k,v]of e){r-=v;if(r<=0)return k;}
-  return e[e.length-1][0];
-}
-function phaseW(l){if(l<=2)return{...weights.early};if(l<=5)return{...weights.mid};return{...weights.preBoss};}
-function phaseOf(l){if(l<=2)return 0;if(l<=5)return 1;if(l===6)return 2;return 3;}
-
-function generateMap(po){
-  const pat=po||PATTERNS[Math.floor(Math.random()*PATTERNS.length)];
+function genMap(rc){
+  const rooms=rc||8,nodes=[];for(let l=0;l<rooms;l++)nodes.push(l===rooms-1?1:(Math.random()>.4?2:3));
+  const pat={nodes,total:nodes.reduce((s,v)=>s+v,0),id:String.fromCharCode(65+Math.floor(Math.random()*5))};
   const layers=[];
-  for(let l=0;l<8;l++){
-    const c=pat.nodes[l],ln=[];
-    if(l===7){ln.push({type:"Boss",layer:l,index:0,conn:[]});}
-    else{for(let i=0;i<c;i++)ln.push({type:wRand(phaseW(l)),layer:l,index:i,conn:[]});}
-    layers.push(ln);
-  }
-  // Hard rules
-  const ef=()=>layers.slice(0,3).flat();
-  if(!ef().some(n=>n.type==="Gold")){const t=ef().filter(n=>n.type!=="Weapon");if(t.length)t[Math.floor(Math.random()*t.length)].type="Gold";}
-  if(!ef().some(n=>n.type==="Weapon")){const t=ef().filter(n=>n.type!=="Gold");if(t.length)t[Math.floor(Math.random()*t.length)].type="Weapon";}
-  if(!layers.slice(4,7).flat().some(n=>n.type==="Healing")){const p=layers[6];p[Math.floor(Math.random()*p.length)].type="Healing";}
-  const flat=layers.flat();
-  for(let i=2;i<flat.length;i++){if(flat[i].type!=="Boss"&&flat[i].type===flat[i-1].type&&flat[i].type===flat[i-2].type){const w=phaseW(flat[i].layer);w[flat[i].type]=0;flat[i].type=wRand(w);}}
-  let ch=flat.filter(n=>n.type==="Challenge");
-  while(ch.length>2){const t=ch.pop();const w=phaseW(t.layer);w.Challenge=0;t.type=wRand(w);ch=flat.filter(n=>n.type==="Challenge");}
-  let vt=flat.filter(n=>n.type==="Vault");
-  for(let i=1;i<vt.length;i++){const w=phaseW(vt[i].layer);w.Vault=0;vt[i].type=wRand(w);}
-  const bc=flat.filter(n=>n.type==="Upgrade"||n.type==="Relic").length;
-  if(bc<2){const cd=flat.filter(n=>!["Boss","Gold","Weapon","Upgrade","Relic"].includes(n.type));for(let i=0;i<2-bc&&i<cd.length;i++)cd[i].type=Math.random()>0.5?"Upgrade":"Relic";}
-  // Connections
-  for(let l=0;l<7;l++){
-    const c=layers[l],n=layers[l+1];
-    for(let i=0;i<c.length;i++){const mj=Math.max(0,Math.floor(i*n.length/c.length)),xj=Math.min(n.length-1,Math.ceil((i+1)*n.length/c.length));for(let j=mj;j<=xj;j++)if(!c[i].conn.includes(j))c[i].conn.push(j);}
-    for(let j=0;j<n.length;j++){if(!c.some(nd=>nd.conn.includes(j))){let b=0,bd=1e9;c.forEach((nd,idx)=>{const d=Math.abs(idx*n.length/c.length-j);if(d<bd){bd=d;b=idx;}});c[b].conn.push(j);}}
-  }
-  return{pattern:pat,layers};
+  for(let l=0;l<rooms;l++){const c=pat.nodes[l],ln=[];if(l===rooms-1)ln.push({type:"Boss",layer:l,index:0,conn:[]});else for(let i=0;i<c;i++)ln.push({type:wR(pW(l,rooms)),layer:l,index:i,conn:[]});layers.push(ln);}
+  const ef=()=>layers.slice(0,Math.floor(rooms*.375)).flat();
+  if(!ef().some(n=>n.type==="Gold")){const t=ef().filter(n=>n.type!=="Weapon");if(t.length)t[ri(t)].type="Gold";}
+  if(!ef().some(n=>n.type==="Weapon")){const t=ef().filter(n=>n.type!=="Gold");if(t.length)t[ri(t)].type="Weapon";}
+  if(!layers.slice(Math.max(0,rooms-4),rooms-1).flat().some(n=>n.type==="Healing"))layers[rooms-2][ri(layers[rooms-2])].type="Healing";
+  if(!layers.slice(0,-1).flat().some(n=>n.type==="Shop"))layers[Math.floor(rooms/2)][ri(layers[Math.floor(rooms/2)])].type="Shop";
+  for(let l=0;l<rooms-1;l++){const c=layers[l],n=layers[l+1];for(let i=0;i<c.length;i++){const mj=Math.max(0,Math.floor(i*n.length/c.length)),xj=Math.min(n.length-1,Math.ceil((i+1)*n.length/c.length));for(let j=mj;j<=xj;j++)if(!c[i].conn.includes(j))c[i].conn.push(j);}for(let j=0;j<n.length;j++){if(!c.some(nd=>nd.conn.includes(j))){let b=0,bd=1e9;c.forEach((nd,idx)=>{const d=Math.abs(idx*n.length/c.length-j);if(d<bd){bd=d;b=idx;}});c[b].conn.push(j);}}}
+  return{layers,rooms,pat};
 }
 
-function validateMap(layers){
-  const flat=layers.flat(),early=layers.slice(0,3).flat().map(n=>n.type),r=[];
-  const ck=(ok,lb)=>r.push({ok,label:lb});
-  ck(layers[7][0].type==="Boss","R1: Node 8 = Boss");
-  ck(early.includes("Gold"),"R2: Early มี Gold");
-  ck(early.includes("Weapon"),"R3: Early มี Weapon");
-  ck(layers.slice(4,7).flat().some(n=>n.type==="Healing"),"R4: Healing ก่อน Boss");
-  let nt=true;for(let i=2;i<flat.length;i++)if(flat[i].type!=="Boss"&&flat[i].type===flat[i-1].type&&flat[i].type===flat[i-2].type)nt=false;
-  ck(nt,"R5: No Triple");
-  ck(flat.filter(n=>n.type==="Challenge").length<=2,"R6: Challenge ≤ 2");
-  ck(flat.filter(n=>n.type==="Vault").length<=1,"R7: Vault ≤ 1");
-  ck(flat.filter(n=>n.type==="Upgrade"||n.type==="Relic").length>=2,"R8: Build Variety ≥ 2");
-  return r;
+function newP(meta){
+  const p={mxHp:100,hp:100,bA:20,aM:0,cD:0,dr:0,mom:0,mxM:100,mG:0,crit:5,hCh:3,coin:0,
+    yantra:[null,null,null,null],syn:[],time:0,shops:0,elites:0,mDR:0,mMG:0,mCD:0,cM:1,sY:false,dead:false,boss:false};
+  if(meta)TREE.forEach(t=>t.nodes.forEach(n=>{for(let i=0;i<META.sk[n.id];i++)n.ap(p);}));
+  if(p.sY){const pool=YP.filter(y=>y.cat!=="forbidden");p.yantra[0]=pool[ri(pool)];}
+  return p;
+}
+function aYS(p){let a=0,d=0,mg=0,cd=0,cr=5;p.syn=[];const eq=p.yantra.filter(y=>y);eq.forEach(y=>{if(y.s.atk)a+=y.s.atk;if(y.s.dr)d+=y.s.dr;if(y.s.mG)mg+=y.s.mG;if(y.s.cD)cd+=y.s.cD;if(y.s.crit)cr+=y.s.crit;});
+p.aM=a;p.dr=d;p.mG=mg;p.cD=cd;p.crit=cr;const ids=eq.map(y=>y.id);eq.forEach(y=>{if(y.pair&&ids.includes(y.pair)&&!p.syn.includes(y.bonus))p.syn.push(y.bonus);});}
+
+function getDiff(){return document.getElementById('mDiff')?.value||'normal';}
+function doDmg(p,base,rn){
+  const df=getDiff()==='easy'?.8:getDiff()==='hard'?1.2:1;
+  const dr=Math.max(0,Math.min(70,p.dr+p.mDR))/100;
+  const ml=mLv();const dodge=Math.min(.35,ml*.02+Math.min((rn||0)*.008,.08));
+  const d=Math.round(base*df*(1-dr)*(Math.random()<dodge?.3:1));
+  p.hp=Math.max(0,p.hp-d);return d;
 }
 
-// ═══════════════════════════════════════════════════
-// ROOM EFFECTS ON PLAYER
-// ═══════════════════════════════════════════════════
-function applyRoomEffect(type){
+function procRoom(p,type,rn){
+  const tk=type.toLowerCase();p.time+=(TIM[tk]||TIM.combat)*(.85+Math.random()*.3);
+  const cm=p.cM;
   switch(type){
-    case"Gold": player.kasapCoin+=Math.floor(30+Math.random()*40); break;
-    case"Weapon": player.baseAtk+=Math.floor(3+Math.random()*5); break;
-    case"Upgrade": player.atkMult+=5+Math.floor(Math.random()*8); break;
-    case"Healing": const heal=Math.floor(player.maxHp*0.3);player.hp=Math.min(player.maxHp,player.hp+heal);player.healCharges=Math.max(0,player.healCharges-1); break;
-    case"Challenge": const dmg=Math.floor(10+Math.random()*15);player.hp=Math.max(1,player.hp-dmg);player.kasapCoin+=Math.floor(50+Math.random()*60);player.atkMult+=8; break;
-    case"Vault": player.kasapCoin+=Math.floor(80+Math.random()*60);player.atkMult+=3; break;
-    case"Boss": const bDmg=Math.floor(20+Math.random()*25);player.hp=Math.max(0,player.hp-bDmg); break;
+    case"Gold":p.coin+=Math.round(rng(25,45)*cm);break;
+    case"Weapon":p.bA+=rng(2,5);p.coin+=Math.round(rng(5,10)*cm);break;
+    case"Upgrade":p.aM+=rng(5,10);p.coin+=Math.round(rng(5,8)*cm);break;
+    case"Relic":{p.coin+=Math.round(rng(5,10)*cm);const es=p.yantra.findIndex(y=>!y);if(es>=0){p.yantra[es]=YP.filter(y=>y.cat!=="forbidden")[ri(YP.filter(y=>y.cat!=="forbidden"))];aYS(p);}}break;
+    case"Healing":p.hp=Math.min(p.mxHp,p.hp+Math.floor(p.mxHp*.25));break;
+    case"Challenge":{doDmg(p,rng(12,25),rn);p.coin+=Math.round(rng(40,70)*cm);p.aM+=rng(5,8);if(p.hp<=0)return true;}break;
+    case"Shop":{p.shops++;const es=p.yantra.findIndex(y=>!y);if(es>=0&&p.coin>=35){p.yantra[es]=YP.filter(y=>y.cat!=="forbidden")[ri(YP.filter(y=>y.cat!=="forbidden"))];p.coin-=35;aYS(p);}if(p.hp<p.mxHp*.5&&p.coin>=30){p.coin-=30;p.hp=Math.min(p.mxHp,p.hp+Math.floor(p.mxHp*.25));}if(p.coin>=50){p.coin-=50;p.bA+=3;}}break;
+    case"Elite":{doDmg(p,rng(18,35),rn);p.coin+=Math.round(rng(25,40)*cm);p.elites++;p.aM+=rng(3,8);if(p.hp<=0)return true;const es=p.yantra.findIndex(y=>!y);if(es>=0&&Math.random()<.4){p.yantra[es]=YP.filter(y=>y.cat!=="forbidden")[ri(YP.filter(y=>y.cat!=="forbidden"))];aYS(p);}}break;
+    case"Boss":{doDmg(p,rng(30,60),rn);if(p.hp>0)doDmg(p,rng(15,35),rn);if(p.hp>0&&getDiff()==='hard')doDmg(p,rng(10,25),rn);if(p.hp<=0)return true;p.boss=true;}break;
   }
-  player.momentum=Math.min(player.maxMomentum,player.momentum+Math.floor(10+Math.random()*15+player.momentumGain*0.3));
+  p.mom=Math.min(p.mxM,p.mom+rng(5,15));return false;
 }
+function autoUpg(){let go=true;while(go){go=false;for(const t of TREE)for(const n of t.nodes){const lv=META.sk[n.id];if(lv<n.mx&&META.pod>=n.co[lv]){META.pod-=n.co[lv];META.sk[n.id]++;go=true;break;}}}}
 
-// ═══════════════════════════════════════════════════
-// YANTRA SYSTEM
-// ═══════════════════════════════════════════════════
-let pendingYantraSlot=-1;
-function offerYantra(){
-  // Random 3 from pool, weighted by cat
-  const pool=[...YANTRA_POOL];
-  const picks=[];
-  for(let i=0;i<3&&pool.length;i++){
-    const idx=Math.floor(Math.random()*pool.length);
-    picks.push(pool.splice(idx,1)[0]);
-  }
-  showYantraModal(picks);
-}
-
-function showYantraModal(picks){
-  const modal=document.getElementById('yantraModal');
-  const body=document.getElementById('yantraModalBody');
-  const emptySlot=player.yantra.findIndex(y=>y===null);
-  const title=document.getElementById('yantraModalTitle');
-  title.textContent=emptySlot>=0?`🔮 เลือก Yantra → Slot ${emptySlot+1}`:'🔮 เลือก Yantra (สลักทับ)';
-  let html='';
-  picks.forEach(y=>{
-    const cc=CAT_COLORS[y.cat];
-    html+=`<div class="yantra-pick" onclick="pickYantra('${y.id}')" style="border-left:3px solid ${cc}">
-      <div class="yp-head"><span>${y.color}</span><span class="yp-id">${y.id}</span><span class="yp-name" style="color:${cc}">${y.name}</span><span style="font-size:10px;color:var(--ft)">(${y.sub})</span></div>
-      <div class="yp-effect">${y.effect}</div>
-      <div class="yp-lore">${y.lore}</div>
-      ${y.pair?`<div style="font-size:10px;color:var(--gold);margin-top:2px">⚡ Synergy: ${y.bonus}</div>`:''}
-    </div>`;
-  });
-  body.innerHTML=html;
-  modal.classList.remove('hidden');
-}
-
-function pickYantra(id){
-  const y=YANTRA_POOL.find(yy=>yy.id===id);
-  if(!y)return;
-  const emptySlot=player.yantra.findIndex(yy=>yy===null);
-  if(emptySlot>=0){
-    player.yantra[emptySlot]=y;
-  }else{
-    // Overwrite oldest
-    player.yantra.shift();
-    player.yantra.push(y);
-  }
-  applyYantraStats();
-  closeYantraModal();
-  renderAll();
-}
-
-function closeYantraModal(){
-  document.getElementById('yantraModal').classList.add('hidden');
-}
-
-function applyYantraStats(){
-  // Reset yantra-based stats
-  player.atkMult=0;player.dmgReduction=0;player.momentumGain=0;player.counterDmg=0;player.critChance=5;player.parryExt=0;
-  player.synergies=[];
-  const equipped=player.yantra.filter(y=>y!==null);
-  equipped.forEach(y=>{
-    if(y.stat.atkMult)player.atkMult+=y.stat.atkMult;
-    if(y.stat.dmgReduction)player.dmgReduction+=y.stat.dmgReduction;
-    if(y.stat.momentumGain)player.momentumGain+=y.stat.momentumGain;
-    if(y.stat.counterDmg)player.counterDmg+=y.stat.counterDmg;
-    if(y.stat.critChance)player.critChance+=y.stat.critChance;
-    if(y.stat.parryExt)player.parryExt+=y.stat.parryExt;
-    if(y.stat.maxHp)player.maxHp=Math.max(10,player.maxHp+y.stat.maxHp);
-    if(y.stat.healCharges)player.healCharges=Math.max(0,player.healCharges+y.stat.healCharges);
-  });
-  player.hp=Math.min(player.hp,player.maxHp);
-  // Check synergy pairs
-  const ids=equipped.map(y=>y.id);
-  equipped.forEach(y=>{
-    if(y.pair&&ids.includes(y.pair)&&!player.synergies.includes(y.bonus)){
-      player.synergies.push(y.bonus);
-    }
-  });
-}
-
-// ═══════════════════════════════════════════════════
-// CANVAS
-// ═══════════════════════════════════════════════════
-const CW=680,CH=460;
-function lx(l){return 45+l*((CW-90)/7);}
-function ny(l,i,c){const sp=Math.min(62,(CH-80)/(c+1)),th=sp*(c-1);return(CH/2)-(th/2)+i*sp;}
-
-function drawMap(){
-  const canvas=document.getElementById('mc');
-  if(!canvas||!currentMap)return;
-  const ctx=canvas.getContext('2d'),dpr=window.devicePixelRatio||1;
-  canvas.width=CW*dpr;canvas.height=CH*dpr;
-  canvas.style.aspectRatio=`${CW}/${CH}`;
+// ═══════════════ CANVAS MAP DRAWING ═══════════════
+function drawMap(cvId,mapData,pathData){
+  const cv=document.getElementById(cvId);if(!cv||!mapData)return;
+  const rooms=mapData.rooms,layers=mapData.layers;
+  const CW=Math.max(620,rooms*78),CH=380;
+  const ctx=cv.getContext('2d'),dpr=window.devicePixelRatio||1;
+  cv.width=CW*dpr;cv.height=CH*dpr;cv.style.aspectRatio=`${CW}/${CH}`;
   ctx.scale(dpr,dpr);ctx.clearRect(0,0,CW,CH);
-  const layers=currentMap.layers;
-
-  PHASES.forEach(p=>{
-    const x1=lx(p.start)-32,x2=lx(p.end)+32;
-    ctx.fillStyle=p.bg;ctx.beginPath();ctx.roundRect(x1,12,x2-x1,CH-24,10);ctx.fill();
-    ctx.strokeStyle=p.border+"25";ctx.lineWidth=1;ctx.stroke();
-    ctx.fillStyle=p.color;ctx.font="bold 8px 'Sarabun',sans-serif";ctx.textAlign="center";ctx.fillText(p.label,(x1+x2)/2,26);
+  const lx=l=>38+l*((CW-76)/(rooms-1));
+  const ny=(l,i,c)=>{const sp=Math.min(56,(CH-70)/(c+1)),th=sp*(c-1);return CH/2-th/2+i*sp;};
+  // Phase bgs
+  const eEnd=Math.floor(rooms*.375),mEnd=rooms-2;
+  [{s:0,e:eEnd-1,...PH[0]},{s:eEnd,e:mEnd-1,...PH[1]},{s:mEnd,e:rooms-2,...PH[2]},{s:rooms-1,e:rooms-1,...PH[3]}].forEach(p=>{
+    if(p.s>p.e)return;const x1=lx(p.s)-26,x2=lx(p.e)+26;
+    ctx.fillStyle=p.bg;ctx.beginPath();ctx.roundRect(x1,8,x2-x1,CH-16,8);ctx.fill();
+    ctx.fillStyle=p.c;ctx.font="bold 7px 'Sarabun',sans-serif";ctx.textAlign="center";ctx.fillText(p.l,(x1+x2)/2,20);
   });
-
-  layers.forEach((layer,l)=>{
-    if(l>=7)return;
-    layer.forEach((node,i)=>{
-      const x1=lx(l),y1=ny(l,i,layer.length);
-      node.conn.forEach(j=>{
-        const x2=lx(l+1),y2=ny(l+1,j,layers[l+1].length);
-        const onP=selectedPath.some(p=>p[0]===l&&p[1]===i)&&selectedPath.some(p=>p[0]===l+1&&p[1]===j);
-        ctx.beginPath();ctx.moveTo(x1+16,y1);
-        const cpx=(x1+x2)/2;ctx.bezierCurveTo(cpx,y1,cpx,y2,x2-16,y2);
-        ctx.strokeStyle=onP?"#F59E0B":"#47556935";ctx.lineWidth=onP?2.5:1.2;
-        if(onP){ctx.shadowColor="#F59E0B";ctx.shadowBlur=6;}
-        ctx.stroke();ctx.shadowBlur=0;
-      });
+  // Connections
+  layers.forEach((layer,l)=>{if(l>=rooms-1)return;layer.forEach((node,i)=>{
+    const x1=lx(l),y1=ny(l,i,layer.length);
+    node.conn.forEach(j=>{
+      const x2=lx(l+1),y2=ny(l+1,j,layers[l+1].length);
+      const onP=pathData.some(p=>p[0]===l&&p[1]===i)&&pathData.some(p=>p[0]===l+1&&p[1]===j);
+      ctx.beginPath();ctx.moveTo(x1+14,y1);const cpx=(x1+x2)/2;ctx.bezierCurveTo(cpx,y1,cpx,y2,x2-14,y2);
+      ctx.strokeStyle=onP?"#F59E0B":"#47556928";ctx.lineWidth=onP?2.5:1;
+      if(onP){ctx.shadowColor="#F59E0B";ctx.shadowBlur=5;}ctx.stroke();ctx.shadowBlur=0;
     });
-  });
-
-  layers.forEach((layer,l)=>{
-    layer.forEach((node,i)=>{
-      const x=lx(l),y=ny(l,i,layer.length),rt=RT[node.type];
-      const onP=selectedPath.some(p=>p[0]===l&&p[1]===i);
-      let click=false;
-      if(!selectedPath.length&&l===0)click=true;
-      else if(selectedPath.length&&selectedPath.length<8){const last=selectedPath[selectedPath.length-1];if(l===last[0]+1&&layers[last[0]][last[1]].conn.includes(i))click=true;}
-
-      if(onP){ctx.shadowColor=rt.color;ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,18,0,Math.PI*2);ctx.fillStyle=rt.color+"25";ctx.fill();ctx.shadowBlur=0;}
-      ctx.beginPath();ctx.arc(x,y,15,0,Math.PI*2);
-      ctx.fillStyle=onP?rt.color:"#1E293B";ctx.fill();
-      ctx.strokeStyle=onP?"#FCD34D":click?rt.color:"#475569";ctx.lineWidth=onP?2.5:click?2:1;ctx.stroke();
-      if(click&&!onP){ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);ctx.strokeStyle=rt.color+"40";ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);}
-      ctx.font="13px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(rt.icon,x,y+1);
-      if(i===layer.length-1){const my=ny(l,layer.length-1,layer.length);ctx.font="bold 8px 'Sarabun',sans-serif";ctx.fillStyle="#4A5568";ctx.textAlign="center";ctx.fillText(`L${l+1}`,x,my+26);}
-    });
-  });
+  });});
+  // Nodes
+  layers.forEach((layer,l)=>{layer.forEach((node,i)=>{
+    const x=lx(l),y=ny(l,i,layer.length),rt=RT[node.type];
+    const onP=pathData.some(p=>p[0]===l&&p[1]===i);
+    let clickable=false;
+    if(!pathData.length&&l===0)clickable=true;
+    else if(pathData.length&&pathData.length<rooms){const last=pathData[pathData.length-1];if(l===last[0]+1&&layers[last[0]][last[1]].conn.includes(i))clickable=true;}
+    if(onP){ctx.shadowColor=rt.c;ctx.shadowBlur=10;ctx.beginPath();ctx.arc(x,y,15,0,Math.PI*2);ctx.fillStyle=rt.c+"20";ctx.fill();ctx.shadowBlur=0;}
+    ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fillStyle=onP?rt.c:"#1A2332";ctx.fill();
+    ctx.strokeStyle=onP?"#FCD34D":clickable?rt.c:"#475569";ctx.lineWidth=onP?2.5:clickable?2:1;ctx.stroke();
+    if(clickable&&!onP){ctx.beginPath();ctx.arc(x,y,16,0,Math.PI*2);ctx.strokeStyle=rt.c+"35";ctx.lineWidth=1;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);}
+    ctx.font="11px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(rt.i,x,y+1);
+    if(i===layer.length-1){ctx.font="bold 7px 'Sarabun',sans-serif";ctx.fillStyle="#3E4C5E";ctx.fillText(`L${l+1}`,x,ny(l,layer.length-1,layer.length)+20);}
+  });});
+  // Store geometry for click detection
+  cv._lx=lx;cv._ny=ny;cv._CW=CW;cv._CH=CH;
 }
 
-function handleCanvasClick(e){
-  if(!currentMap||selectedPath.length>=8)return;
-  const canvas=e.target,rect=canvas.getBoundingClientRect();
-  const sx=CW/rect.width,sy=CH/rect.height;
+function canvasClick(e,mapData,pathData,onSelect){
+  if(!mapData)return;
+  const cv=e.target,rect=cv.getBoundingClientRect();
+  const CW=cv._CW,CH=cv._CH,sx=CW/rect.width,sy=CH/rect.height;
   const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;
-  const layers=currentMap.layers;
-  for(let l=0;l<layers.length;l++){
-    for(let i=0;i<layers[l].length;i++){
-      const x=lx(l),y=ny(l,i,layers[l].length);
-      if(Math.hypot(mx-x,my-y)<20){
-        if(selectedPath.length===0&&l===0){selectedPath.push([l,i]);processNode(l,i);renderAll();return;}
-        if(selectedPath.length>0){
-          const last=selectedPath[selectedPath.length-1];
-          if(l===last[0]+1&&layers[last[0]][last[1]].conn.includes(i)){
-            selectedPath.push([l,i]);processNode(l,i);
-            if(l===7){const pt=selectedPath.map(([ll,ii])=>layers[ll][ii].type);runHistory.unshift({pattern:currentMap.pattern.id,path:pt});if(runHistory.length>15)runHistory.pop();}
-            renderAll();return;
-          }
-        }
-      }
+  const rooms=mapData.rooms,layers=mapData.layers;
+  for(let l=0;l<layers.length;l++){for(let i=0;i<layers[l].length;i++){
+    const x=cv._lx(l),y=cv._ny(l,i,layers[l].length);
+    if(Math.hypot(mx-x,my-y)<16){
+      if(!pathData.length&&l===0){onSelect(l,i);return;}
+      if(pathData.length&&pathData.length<rooms){const last=pathData[pathData.length-1];if(l===last[0]+1&&layers[last[0]][last[1]].conn.includes(i)){onSelect(l,i);return;}}
     }
+  }}
+}
+
+// ═══════════════ SINGLE RUN ═══════════════
+let S={map:null,path:[],p:null};
+
+function s_gen(){S.map=genMap(+document.getElementById('sRooms').value);S.path=[];S.p=newP(true);document.getElementById('sMetaLv').textContent=mLv();s_render();}
+function s_reset(){S.path=[];if(S.map)S.p=newP(true);s_render();}
+function s_auto(){
+  if(!S.map)s_gen();S.path=[];S.p=newP(true);
+  const m=S.map,rooms=m.rooms,L=m.layers;let cur=ri(L[0]);S.path.push([0,cur]);let died=procRoom(S.p,L[0][cur].type,META.runs);
+  for(let l=1;l<rooms&&!died;l++){const prev=L[l-1][cur];const ni=prev.conn[ri(prev.conn)];S.path.push([l,ni]);died=procRoom(S.p,L[l][ni].type,META.runs);cur=ni;}
+  s_record();s_render();
+}
+function s_nodeClick(l,i){
+  S.path.push([l,i]);const died=procRoom(S.p,S.map.layers[l][i].type,META.runs);
+  if(l===S.map.rooms-1||died)s_record();
+  s_render();
+}
+function s_record(){
+  const p=S.p,types=S.path.map(([l,i])=>S.map.layers[l][i].type);
+  DATA.s.push({run:DATA.s.length+1,pat:S.map.pat.id,rooms:S.map.rooms,time:Math.round(p.time),coin:p.coin,hp:p.hp,mxHp:p.mxHp,yantra:p.yantra.filter(y=>y).length,shops:p.shops,elites:p.elites,ok:p.boss,types:types.join('→')});
+  updDC();
+}
+
+function s_render(){
+  const p=S.p,m=S.map;
+  if(!m){document.getElementById('sMapArea').innerHTML='<div class="c" style="text-align:center;padding:40px;color:var(--ft)"><div style="font-size:30px;margin-bottom:6px">🗺️</div><p>กด "สุ่ม Map" → คลิก Node เพื่อเลือกเส้นทาง</p></div>';document.getElementById('sPStats').innerHTML='';document.getElementById('sYSlots').innerHTML='';return;}
+  // Map canvas + path chips
+  const types=S.path.map(([l,i])=>m.layers[l][i].type);
+  const runDone=S.path.length>=m.rooms||p.hp<=0;
+  let h=`<div class="c" style="padding:6px 10px;font-size:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+    <span style="color:var(--gold);font-weight:700">Pat ${m.pat.id}</span>
+    <span class="mono" style="color:var(--mu);font-size:9px">${m.pat.nodes.slice(0,-1).join('→')}→B</span>
+    <span style="color:var(--dm)">${m.rooms}rm / ${m.pat.total}n</span>
+    <span style="color:var(--mu)">⏱${Math.floor(p.time/60)}:${String(Math.floor(p.time%60)).padStart(2,'0')}</span></div>`;
+  h+=`<div class="map-w"><canvas id="sCv"></canvas>${!S.path.length&&!runDone?'<div class="map-hint">👆 คลิก Node ใน Layer 1 เพื่อเริ่มเลือกเส้นทาง</div>':''}</div>`;
+  if(S.path.length){
+    h+=`<div class="c"><div class="ct">🚶 Path (${S.path.length}/${m.rooms})</div><div style="display:flex;gap:2px;flex-wrap:wrap;align-items:center">`;
+    types.forEach((t,i)=>{const r=RT[t];h+=`<span class="pchip" style="background:${r.c}15;border:1px solid ${r.c}30">${r.i}<span style="color:${r.c}">${t}</span></span>`;if(i<types.length-1)h+=`<span class="parr">→</span>`;});
+    h+=`</div></div>`;
   }
+  if(runDone&&p.boss)h+=`<div class="win-s"><div style="font-size:18px">👑</div><div style="font-weight:800;color:var(--grn)">BOSS CLEARED</div></div>`;
+  else if(runDone&&p.hp<=0)h+=`<div class="death-s"><div style="font-size:18px">💀</div><div style="font-weight:800;color:var(--red)">DEAD at ${types[types.length-1]}</div></div>`;
+  document.getElementById('sMapArea').innerHTML=h;
+  // Draw canvas after DOM update
+  requestAnimationFrame(()=>{const cv=document.getElementById('sCv');if(cv){drawMap('sCv',m,S.path);cv.onclick=e=>canvasClick(e,S.map,S.path,s_nodeClick);}});
+  // Player
+  renderP('sPStats',p);renderYS('sYSlots',p);
 }
 
-function processNode(l,i){
-  const node=currentMap.layers[l][i];
-  applyRoomEffect(node.type);
-  // Offer Yantra on Relic rooms
-  if(node.type==="Relic"){setTimeout(()=>offerYantra(),200);}
-  // Chance of Yantra on Vault
-  if(node.type==="Vault"&&Math.random()<0.6){setTimeout(()=>offerYantra(),200);}
-  // Check: ensure player gets at least 4 yantra chances across 8 nodes
-  const filledCount=player.yantra.filter(y=>y!==null).length;
-  const remainingNodes=8-selectedPath.length;
-  if(filledCount<4&&remainingNodes<=3&&node.type!=="Relic"&&node.type!=="Vault"&&node.type!=="Boss"){
-    // Force a yantra offer to ensure 4 slots fillable
-    setTimeout(()=>offerYantra(),300);
-  }
+function s_batch(){
+  const rooms=+document.getElementById('sRooms').value;const results=[];
+  for(let r=0;r<100;r++){const m=genMap(rooms);const p=newP(true);let path=[];let cur=ri(m.layers[0]);path.push([0,cur]);let died=procRoom(p,m.layers[0][cur].type,META.runs);
+    for(let l=1;l<rooms&&!died;l++){const prev=m.layers[l-1][cur];const ni=prev.conn[ri(prev.conn)];path.push([l,ni]);died=procRoom(p,m.layers[l][ni].type,META.runs);cur=ni;}
+    const types=path.map(([l,i])=>m.layers[l][i].type);
+    results.push({time:p.time,coin:p.coin,hp:Math.round(p.hp/p.mxHp*100),yantra:p.yantra.filter(y=>y).length,shops:p.shops,elites:p.elites,build:types.filter(t=>t==="Upgrade"||t==="Relic").length,ok:p.boss});
+    DATA.s.push({run:DATA.s.length+1,pat:m.pat.id,rooms,time:Math.round(p.time),coin:p.coin,hp:p.hp,mxHp:p.mxHp,yantra:p.yantra.filter(y=>y).length,shops:p.shops,elites:p.elites,ok:p.boss,types:types.join('→')});}
+  updDC();
+  const BN={totalTime:{min:480,max:900,l:"Time(s)"},kasapCoin:{min:250,max:600,l:"Kasap"},yantra:{min:3,max:4,l:"Yantra"},shops:{min:1,max:2,l:"Shop"},elites:{min:1,max:3,l:"Elite"},hp:{min:20,max:80,l:"HP%"},build:{min:2,max:6,l:"Build"}};
+  const avg=k=>{const v=results.map(r=>r[k]);return Math.round(v.reduce((s,x)=>s+x,0)/v.length*10)/10;};
+  const data={totalTime:avg('time'),kasapCoin:avg('coin'),hp:avg('hp'),yantra:avg('yantra'),shops:avg('shops'),elites:avg('elites'),build:avg('build')};
+  let bh='<div class="bench">';
+  Object.entries(BN).forEach(([k,b])=>{const v=data[k]||0;const ok=v>=b.min&&v<=b.max;bh+=`<div class="bc"><div class="bc-l">${b.l}</div><div class="bc-v" style="color:${ok?'var(--grn)':'var(--red)'}">${Math.round(v)}</div><div class="bc-t" style="background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.1)'};color:${ok?'var(--grn)':'var(--red)'}">เป้า${b.min}–${b.max}</div></div>`;});
+  const pass=Object.entries(BN).filter(([k,b])=>(data[k]||0)>=b.min&&(data[k]||0)<=b.max).length;
+  bh+=`</div><div style="text-align:center;margin-top:8px;font-size:12px;font-weight:700;color:${pass>=5?'var(--grn)':'var(--red)'}">Bench: ${pass}/${Object.keys(BN).length} ${pass>=5?'✅':'❌'}</div>`;
+  document.getElementById('bMT').textContent='📊 Batch 100 Single Runs';document.getElementById('bMB').innerHTML=bh;document.getElementById('bM').classList.remove('hidden');
 }
 
-// ═══════════════════════════════════════════════════
-// WEIGHT EDITOR
-// ═══════════════════════════════════════════════════
-const PHASE_KEYS=["early","mid","preBoss"];
-function renderWeightEditor(){
-  const phase=PHASE_KEYS[activeWTab];
-  const w=weights[phase];
-  let html='';
-  ROOM_KEYS.forEach(k=>{
-    const rt=RT[k];
-    html+=`<div class="w-row">
-      <span class="w-icon">${rt.icon}</span>
-      <span class="w-label">${k}</span>
-      <input type="range" class="w-slider" min="0" max="100" value="${w[k]}" oninput="updateWeight('${phase}','${k}',this.value)" style="accent-color:${rt.color}">
-      <span class="w-val" style="color:${rt.color}" id="wv_${phase}_${k}">${w[k]}</span>
-    </div>`;
-  });
-  const total=Object.values(w).reduce((s,v)=>s+v,0);
-  html+=`<div style="text-align:right;font-size:10px;color:${total===100?'var(--grn)':'var(--red)'};margin-top:4px">Total: ${total}</div>`;
-  document.getElementById('weightEditor').innerHTML=html;
+// ═══════════════ MULTI-RUN ═══════════════
+let MR={map:null,path:[],p:null};
+
+function m_run(){
+  META.runs++;const rooms=+document.getElementById('mRooms').value;
+  MR.map=genMap(rooms);MR.path=[];MR.p=newP(true);
+  const m=MR.map,L=m.layers;let cur=ri(L[0]);MR.path.push([0,cur]);let died=procRoom(MR.p,L[0][cur].type,META.runs);
+  for(let l=1;l<rooms&&!died;l++){const prev=L[l-1][cur];const ni=prev.conn[ri(prev.conn)];MR.path.push([l,ni]);died=procRoom(MR.p,L[l][ni].type,META.runs);cur=ni;}
+  META.tTime+=MR.p.time;let pod=0;
+  if(MR.p.boss){META.clears++;pod=rng(13,25);if(!META.fc){META.fc=META.runs;META.fct=META.tTime;}}
+  else{META.deaths++;const prog=MR.path.length/rooms;pod=prog<.4?rng(3,5):prog<.7?rng(6,10):rng(10,16);}
+  META.pod+=pod;autoUpg();
+  const types=MR.path.map(([l,i])=>L[l][i].type);
+  DATA.m.push({run:META.runs,ok:MR.p.boss,prog:`${MR.path.length}/${rooms}`,time:Math.round(MR.p.time),coin:MR.p.coin,hp:MR.p.hp,mxHp:MR.p.mxHp,yantra:MR.p.yantra.filter(y=>y).length,pod,mlv:mLv(),died:!MR.p.boss?types[types.length-1]:'—',types:types.join('→')});
+  updDC();m_addLog(DATA.m[DATA.m.length-1]);m_renderAll();
+}
+function m_auto(){let mx=50;while(!META.fc&&META.runs<mx)m_run();if(!META.fc)for(let i=0;i<20&&!META.fc;i++)m_run();}
+function m_reset(){META={pod:0,runs:0,deaths:0,clears:0,tTime:0,sk:{},fc:null,fct:null};TREE.forEach(t=>t.nodes.forEach(n=>{META.sk[n.id]=0;}));MR={map:null,path:[],p:null};document.getElementById('mLog').innerHTML='<div style="color:var(--ft);text-align:center;padding:14px">กดเล่นเพื่อเริ่ม</div>';document.getElementById('mStatus').innerHTML='';document.getElementById('mSummary').innerHTML='';document.getElementById('mMapArea').innerHTML='';m_renderAll();}
+
+function m_addLog(e){
+  const log=document.getElementById('mLog');const icons=e.types.split('→').map(t=>`<span>${RT[t]?.i||'?'}</span>`).join('');
+  log.innerHTML=`<div class="rl-e ${e.ok?'win':'dead'}"><div style="display:flex;justify-content:space-between"><b>Run#${e.run}</b>${e.ok?'<span style="color:var(--grn)">👑CLEAR</span>':`<span style="color:var(--red)">💀${e.died}(${e.prog})</span>`}</div><div style="display:flex;gap:1px">${icons}</div><div style="color:var(--dm)">⏱${Math.floor(e.time/60)}m 💰${e.coin} ❤${e.hp} 🔮${e.yantra} 🌀+${e.pod} Lv${e.mlv}</div></div>`+log.innerHTML;
+  const ph=log.querySelector('div[style*="text-align:center"]');if(ph)ph.remove();
 }
 
-function updateWeight(phase,key,val){
-  weights[phase][key]=parseInt(val);
-  document.getElementById(`wv_${phase}_${key}`).textContent=val;
-  const total=Object.values(weights[phase]).reduce((s,v)=>s+v,0);
-  const totalEl=document.getElementById('weightEditor').querySelector('div:last-child');
-  if(totalEl){totalEl.style.color=total===100?'var(--grn)':'var(--org)';totalEl.textContent=`Total: ${total}`;}
-}
-
-function switchWTab(idx,btn){
-  activeWTab=idx;
-  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
-  renderWeightEditor();
-}
-
-function resetWeights(){
-  weights=JSON.parse(JSON.stringify(DEFAULT_WEIGHTS));
-  renderWeightEditor();
-}
-
-// ═══════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════
-function renderPlayerPanel(){
-  const p=player;
-  const hpPct=Math.round(p.hp/p.maxHp*100);
-  const hpColor=hpPct>60?'var(--grn)':hpPct>30?'var(--gold)':'var(--red)';
-  const momPct=Math.round(p.momentum/p.maxMomentum*100);
-  const effAtk=Math.round(p.baseAtk*(1+p.atkMult/100));
-  const effDR=Math.max(0,Math.min(70,p.dmgReduction));
-
-  let html=`
-    <div style="margin-bottom:6px">
-      <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:${hpColor}">❤️ HP</span><span style="color:${hpColor};font-weight:700">${p.hp}/${p.maxHp}</span></div>
-      <div class="hp-bar"><div class="hp-fill" style="width:${hpPct}%;background:${hpColor}"></div></div>
-    </div>
-    <div style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#60A5FA">⚡ Momentum</span><span style="color:#60A5FA;font-weight:700">${p.momentum}/${p.maxMomentum}</span></div>
-      <div class="momentum-bar"><div class="hp-fill" style="width:${momPct}%;background:linear-gradient(90deg,#3B82F6,#60A5FA);border-radius:3px"></div></div>
-    </div>
-    <div class="stat-row"><span class="stat-label">⚔️ ATK (Base)</span><span class="stat-val">${p.baseAtk}</span></div>
-    <div class="stat-row"><span class="stat-label">📈 ATK Bonus</span><span class="stat-val" style="color:var(--teal)">+${p.atkMult}%</span></div>
-    <div class="stat-row"><span class="stat-label">💥 Effective ATK</span><span class="stat-val" style="color:var(--gold)">${effAtk}</span></div>
-    <div class="stat-row"><span class="stat-label">🛡️ DMG Reduction</span><span class="stat-val" style="color:${effDR>=0?'var(--blu)':'var(--red)'}">${effDR}%</span></div>
-    <div class="stat-row"><span class="stat-label">🔄 Counter DMG</span><span class="stat-val">+${p.counterDmg}%</span></div>
-    <div class="stat-row"><span class="stat-label">🎯 Crit Chance</span><span class="stat-val">${p.critChance}%</span></div>
-    <div class="stat-row"><span class="stat-label">🔧 Parry Ext</span><span class="stat-val">+${p.parryExt.toFixed(2)}s</span></div>
-    <div class="stat-row"><span class="stat-label">💊 Heal Charges</span><span class="stat-val">${p.healCharges}</span></div>
-    <div class="stat-row"><span class="stat-label">💰 Kasap Coin</span><span class="stat-val" style="color:var(--gold)">${p.kasapCoin}</span></div>
-  `;
-  document.getElementById('playerStats').innerHTML=html;
-}
-
-function renderYantraSlots(){
-  let html='';
-  player.yantra.forEach((y,i)=>{
-    if(y){
-      const cc=CAT_COLORS[y.cat];
-      html+=`<div class="yantra-slot filled" style="border-color:${cc}40;background:${cc}08">
-        <span class="slot-num">Slot ${i+1}</span><span class="y-color">${y.color}</span>
-        <div class="y-name" style="color:${cc};margin-top:10px">${y.name}</div>
-        <div style="font-size:9px;color:var(--ft)">${y.sub}</div>
-        <div class="y-effect">${y.effect}</div>
-      </div>`;
-    }else{
-      html+=`<div class="yantra-slot"><span class="slot-num">Slot ${i+1}</span><div style="text-align:center;color:var(--ft);font-size:20px;margin-top:12px">—</div><div style="text-align:center;font-size:10px;color:var(--ft)">ว่าง</div></div>`;
+function m_renderAll(){
+  // Meta panel
+  document.getElementById('mMeta').innerHTML=`<div class="ct">📊 Meta</div>
+    <div class="sr"><span style="color:var(--mu)">Runs</span><span>${META.runs}</span></div>
+    <div class="sr"><span style="color:var(--mu)">💀</span><span style="color:var(--red)">${META.deaths}</span></div>
+    <div class="sr"><span style="color:var(--mu)">👑</span><span style="color:var(--grn)">${META.clears}</span></div>
+    <div class="sr"><span style="color:var(--mu)">🌀</span><span style="color:var(--gold)">${META.pod}</span></div>
+    <div class="sr"><span style="color:var(--mu)">⏱</span><span>${Math.floor(META.tTime/60)}m</span></div>
+    <div class="sr"><span style="color:var(--mu)">Lv</span><span style="color:var(--pur)">${mLv()}</span></div>
+    ${META.fc?`<div style="margin-top:3px;padding:3px 6px;background:rgba(34,197,94,.08);border-radius:3px;font-size:9px;color:var(--grn);font-weight:700">🏆 1st Clear: Run#${META.fc} (${Math.floor(META.fct/60)}m)</div>`:'<div style="font-size:9px;color:var(--red);margin-top:3px">ยังไม่ Clear</div>'}`;
+  // Player + Yantra
+  if(MR.p){renderP('mPStats',MR.p);renderYS('mYSlots',MR.p);}
+  // Map display for last run
+  if(MR.map){
+    const types=MR.path.map(([l,i])=>MR.map.layers[l][i].type);
+    let mh='';
+    if(MR.p?.boss)mh+=`<div class="win-s"><div style="font-size:16px">👑</div><div style="font-weight:800;color:var(--grn);font-size:13px">BOSS CLEARED — Run#${META.runs}</div></div>`;
+    else if(MR.p?.hp<=0)mh+=`<div class="death-s"><div style="font-size:16px">💀</div><div style="font-weight:800;color:var(--red);font-size:13px">DEAD — ${MR.path.length}/${MR.map.rooms} ห้อง</div><div style="font-size:9px;color:var(--dm)">Meta Upgrade จะช่วยให้แข็งขึ้น</div></div>`;
+    mh+=`<div class="map-w"><canvas id="mCv"></canvas></div>`;
+    // Path chips
+    if(MR.path.length){
+      mh+=`<div class="c"><div class="ct">🚶 Last Path</div><div style="display:flex;gap:2px;flex-wrap:wrap;align-items:center">`;
+      types.forEach((t,i)=>{const r=RT[t];mh+=`<span class="pchip" style="background:${r.c}15;border:1px solid ${r.c}30">${r.i}<span style="color:${r.c}">${t}</span></span>`;if(i<types.length-1)mh+=`<span class="parr">→</span>`;});
+      mh+=`</div></div>`;
     }
-  });
-  document.getElementById('yantraSlots').innerHTML=html;
-
-  let summary='';
-  const filled=player.yantra.filter(y=>y!==null).length;
-  summary+=`<span>ใส่แล้ว ${filled}/4</span>`;
-  if(player.synergies.length>0){
-    summary+=` | <span style="color:var(--gold)">⚡ ${player.synergies.join(', ')}</span>`;
+    document.getElementById('mMapArea').innerHTML=mh;
+    requestAnimationFrame(()=>{drawMap('mCv',MR.map,MR.path);});
+    document.getElementById('mStatus').innerHTML='';
   }
-  document.getElementById('yantraSummary').innerHTML=summary;
+  // Summary
+  if(META.runs>=2){const wr=META.clears/(META.runs||1)*100;
+    document.getElementById('mSummary').innerHTML=`<div class="c"><div class="ct">📈 สถิติ</div><div class="bench">
+      <div class="bc"><div class="bc-l">WinRate</div><div class="bc-v" style="font-size:14px;color:${wr>0?'var(--grn)':'var(--red)'}">${Math.round(wr)}%</div></div>
+      <div class="bc"><div class="bc-l">TotalTime</div><div class="bc-v" style="font-size:14px">${Math.floor(META.tTime/60)}m</div></div>
+      <div class="bc"><div class="bc-l">Skills</div><div class="bc-v" style="font-size:14px;color:var(--pur)">${mLv()}</div></div>
+      ${META.fc?`<div class="bc" style="border-color:rgba(34,197,94,.3)"><div class="bc-l">1stClear</div><div class="bc-v" style="font-size:14px;color:var(--grn)">Run#${META.fc}</div></div>`:''}</div></div>`;}
+  // Skill tree
+  let th='';TREE.forEach(t=>{th+=`<div style="font-size:8px;font-weight:700;color:${t.color};margin:3px 0 1px">${t.path}</div>`;
+    t.nodes.forEach(n=>{const lv=META.sk[n.id];const mx=lv>=n.mx;const cost=mx?'MAX':n.co[lv]+'🌀';const can=!mx&&META.pod>=n.co[lv];
+      th+=`<div class="mt-node${mx?' mx':''}" ${can?`onclick="buySk('${n.id}')"`:''}style="${can?'border-color:var(--gold);':''}"><span style="width:58px;color:var(--mu)">${n.nm}</span><div class="mt-bar"><div class="mt-fill" style="width:${lv/n.mx*100}%;background:${t.color}"></div></div><span style="width:22px;text-align:center;font-weight:700">${lv}/${n.mx}</span><span style="width:28px;text-align:right;font-size:7px;color:${can?'var(--gold)':'var(--ft)'}">${cost}</span></div>`;});});
+  document.getElementById('mTree').innerHTML=th;
+}
+function buySk(id){for(const t of TREE)for(const n of t.nodes)if(n.id===id){const lv=META.sk[id];if(lv<n.mx&&META.pod>=n.co[lv]){META.pod-=n.co[lv];META.sk[id]++;m_renderAll();}return;}}
+
+function m_b50(){
+  const results=[],rooms=+document.getElementById('mRooms').value;
+  for(let px=0;px<50;px++){const sv=JSON.parse(JSON.stringify(META));META={pod:0,runs:0,deaths:0,clears:0,tTime:0,sk:{},fc:null,fct:null};TREE.forEach(t=>t.nodes.forEach(n=>{META.sk[n.id]=0;}));
+    while(!META.fc&&META.runs<50){META.runs++;const m=genMap(rooms);const p=newP(true);let path=[],cur=ri(m.layers[0]);path.push([0,cur]);let died=procRoom(p,m.layers[0][cur].type,META.runs);
+      for(let l=1;l<rooms&&!died;l++){const prev=m.layers[l-1][cur];const ni=prev.conn[ri(prev.conn)];path.push([l,ni]);died=procRoom(p,m.layers[l][ni].type,META.runs);cur=ni;}
+      META.tTime+=p.time;if(p.boss){META.clears++;META.pod+=rng(13,25);if(!META.fc){META.fc=META.runs;META.fct=META.tTime;}}else{META.deaths++;META.pod+=path.length/rooms<.4?rng(3,5):path.length/rooms<.7?rng(6,10):rng(10,16);}autoUpg();}
+    results.push({cr:META.fc,ct:META.fct,d:META.deaths,tt:META.tTime});META=JSON.parse(JSON.stringify(sv));}
+  const cl=results.filter(r=>r.cr);const avg=k=>{const v=cl.map(r=>r[k]).filter(x=>x!=null);return v.length?Math.round(v.reduce((s,x)=>s+x,0)/v.length*10)/10:0;};
+  DATA.b.push({set:DATA.b.length+1,cr:Math.round(cl.length/50*100),ar:avg('cr'),ad:avg('d'),at:Math.round(avg('ct')/60),f:cl.length?Math.min(...cl.map(r=>r.cr)):'-',sl:cl.length?Math.max(...cl.map(r=>r.cr)):'-',rm:rooms,df:getDiff()});updDC();
+  const avgCR=avg('cr'),inR=avgCR>=5&&avgCR<=15;
+  const hist={};cl.forEach(r=>{hist[r.cr]=(hist[r.cr]||0)+1;});const maxH=Math.max(...Object.values(hist),1);
+  let bh=`<div class="bench"><div class="bc"><div class="bc-l">ClearRate</div><div class="bc-v" style="color:${cl.length/50>=.8?'var(--grn)':'var(--org)'}">${Math.round(cl.length/50*100)}%</div></div>
+    <div class="bc"><div class="bc-l">AvgRuns</div><div class="bc-v" style="color:${inR?'var(--grn)':'var(--red)'}">${avgCR}</div><div class="bc-t" style="background:${inR?'rgba(34,197,94,.1)':'rgba(239,68,68,.1)'};color:${inR?'var(--grn)':'var(--red)'}">5–15</div></div>
+    <div class="bc"><div class="bc-l">AvgDeaths</div><div class="bc-v" style="color:var(--red)">${avg('d')}</div></div>
+    <div class="bc"><div class="bc-l">AvgTime</div><div class="bc-v" style="color:var(--gold)">${Math.round(avg('ct')/60)}m</div></div></div>`;
+  bh+=`<div style="margin-top:8px;font-size:10px;font-weight:700;color:var(--dm)">Clear Distribution</div><div style="display:flex;align-items:flex-end;gap:2px;height:60px;margin-top:4px">`;
+  for(let r=1;r<=Math.max(...Object.keys(hist).map(Number),15);r++){const c=hist[r]||0;bh+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center"><div style="width:100%;height:${c/maxH*100}%;min-height:${c?2:0}px;background:${r>=5?'var(--grn)':'var(--red)'};border-radius:2px 2px 0 0"></div><div style="font-size:6px;color:var(--ft)">${r}</div></div>`;}
+  bh+=`</div><div style="margin-top:8px;padding:6px;background:var(--s3);border-radius:4px;text-align:center;font-weight:800;color:${inR?'var(--grn)':'var(--red)'}">
+    ${inR?'✅ สมดุลดี ~'+Math.round(avgCR)+' Runs':'❌ '+(avgCR<5?'ง่ายไป':'ยากไป')}</div>`;
+  document.getElementById('bMT').textContent='📊 Batch 50 Players';document.getElementById('bMB').innerHTML=bh;document.getElementById('bM').classList.remove('hidden');
 }
 
-function renderMapArea(){
-  if(!currentMap){document.getElementById('emptyState').classList.remove('hidden');document.getElementById('mapArea').classList.add('hidden');return;}
-  document.getElementById('emptyState').classList.add('hidden');
-  document.getElementById('mapArea').classList.remove('hidden');
-  document.getElementById('btnReset').style.display='inline-block';
-
-  const m=currentMap,layers=m.layers,flat=layers.flat();
-  const val=validateMap(layers),allPass=val.every(v=>v.ok);
-  const counts={};flat.forEach(n=>{counts[n.type]=(counts[n.type]||0)+1;});
-  const totalNB=flat.length-1;
-  const runDone=selectedPath.length===8;
-
-  let html=`<div class="c" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 12px">
-    <span style="font-size:10px;color:var(--dm)">Pattern</span>
-    <span style="font-weight:700;color:var(--gold);font-size:14px">${m.pattern.id}: ${m.pattern.name}</span>
-    <span style="color:var(--ft)">|</span>
-    <span style="font-size:11px;color:var(--mu);font-family:monospace;letter-spacing:1px">${m.pattern.nodes.slice(0,7).join('→')}→B</span>
-    <span style="color:var(--ft)">|</span>
-    <span style="font-size:11px;color:var(--dm)">${m.pattern.total} nodes</span>
-  </div>`;
-
-  html+=`<div class="map-wrap"><canvas id="mc"></canvas>${selectedPath.length===0?'<div class="map-hint">👆 คลิก Node ใน Layer 1 เพื่อเริ่ม</div>':''}</div>`;
-
-  // Path
-  if(selectedPath.length>0){
-    let chips='';
-    selectedPath.forEach(([l,i],idx)=>{
-      const t=layers[l][i].type,rt=RT[t];
-      chips+=`<span class="path-chip" style="background:${rt.color}18;border:1px solid ${rt.color}40">${rt.icon}<span style="color:${rt.color}">${rt.label}</span></span>`;
-      if(idx<selectedPath.length-1)chips+=`<span class="path-arrow">→</span>`;
-    });
-    html+=`<div class="c"><div class="c-title">🚶 เส้นทาง (${selectedPath.length}/8)</div><div class="path-row">${chips}</div></div>`;
-  }
-
-  if(runDone){
-    const ps={};selectedPath.forEach(([l,i])=>{const t=layers[l][i].type;ps[t]=(ps[t]||0)+1;});
-    let sc='';Object.entries(ps).filter(([t])=>t!=="Boss").forEach(([t,c])=>{const rt=RT[t];sc+=`<span style="padding:3px 10px;border-radius:5px;font-size:11px;background:${rt.color}12;border:1px solid ${rt.color}25">${rt.icon} ${t}: <b style="color:${rt.color}">${c}</b></span>`;});
-    const yFilled=player.yantra.filter(y=>y!==null).length;
-    html+=`<div class="run-done"><div style="font-size:12px;color:var(--grn);font-weight:700;margin-bottom:8px">✅ Run Complete!</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">${sc}</div>
-      <div style="margin-top:6px;font-size:11px;color:var(--mu)">Yantra: ${yFilled}/4 | Kasap Coin: ${player.kasapCoin} | HP: ${player.hp}/${player.maxHp}</div>
-    </div>`;
-  }
-
-  // Stats row
-  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">`;
-  // Distribution
-  let dr='';Object.entries(counts).filter(([t])=>t!=="Boss").sort((a,b)=>b[1]-a[1]).forEach(([t,c])=>{const pct=Math.round(c/totalNB*100),rt=RT[t];dr+=`<div class="dist-row"><span class="dist-icon">${rt.icon}</span><span class="dist-lbl">${t}</span><div class="dist-bar"><div class="dist-fill" style="width:${pct}%;background:${rt.color}"></div></div><span class="dist-n" style="color:${rt.color}">${c}</span></div>`;});
-  html+=`<div class="c"><div class="c-title">📊 การกระจาย</div>${dr}</div>`;
-  // Validation
-  let vr='';val.forEach(v=>{vr+=`<div class="val-row"><span style="color:${v.ok?'var(--grn)':'var(--red)'}">${v.ok?'✓':'✗'}</span><span style="color:${v.ok?'var(--mu)':'#FCA5A5'}">${v.label}</span></div>`;});
-  html+=`<div class="c"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="c-title" style="margin:0">✅ Rules</span><span style="font-size:9px;padding:1px 6px;border-radius:3px;background:${allPass?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};color:${allPass?'var(--grn)':'var(--red)'}">${allPass?'PASS':'FAIL'}</span></div>${vr}</div>`;
-  html+=`</div>`;
-
-  // Layer detail with editable types
-  let trows='';
-  layers.forEach((layer,l)=>{
-    const pi=phaseOf(l),ph=PHASES[pi];
-    let chips='';
-    layer.forEach((n,ni)=>{
-      const rt=RT[n.type];
-      if(n.type==="Boss"){
-        chips+=`<span class="node-chip" style="background:${rt.color}15;border:1px solid ${rt.color}30">${rt.icon}<span style="color:${rt.color}">${rt.label}</span></span>`;
-      }else{
-        let opts='';[...ROOM_KEYS].forEach(k=>{opts+=`<option value="${k}"${k===n.type?' selected':''}>${RT[k].icon} ${k}</option>`;});
-        chips+=`<span class="node-chip" style="background:${rt.color}15;border:1px solid ${rt.color}30">${rt.icon}<select onchange="changeNodeType(${l},${ni},this.value)">${opts}</select></span>`;
-      }
-    });
-    trows+=`<tr><td style="font-weight:700;color:${ph.color}">${l+1}</td><td><span class="phase-tag" style="background:${ph.color}18;color:${ph.color}">${ph.label}</span></td><td style="text-align:center;color:var(--mu)">${layer.length}</td><td>${chips}</td></tr>`;
-  });
-  html+=`<div class="c"><div class="c-title">📋 Node Detail (คลิกเปลี่ยนประเภทได้)</div><table class="lt"><thead><tr><th>L</th><th>ช่วง</th><th style="text-align:center">N</th><th>ประเภทห้อง</th></tr></thead><tbody>${trows}</tbody></table></div>`;
-
-  // History
-  if(runHistory.length>0){
-    let he='';runHistory.forEach((r,i)=>{let ic='';r.path.forEach(t=>{ic+=`<span title="${t}">${RT[t].icon}</span>`;});he+=`<div class="hist-e"><span style="width:20px;color:var(--ft);font-weight:600">#${i+1}</span><span style="width:14px;color:var(--gold);font-weight:600">${r.pattern}</span><div style="display:flex;gap:1px;flex:1">${ic}</div></div>`;});
-    html+=`<div class="c"><div class="c-title">📜 ประวัติ (${runHistory.length})</div>${he}</div>`;
-  }
-
-  document.getElementById('mapArea').innerHTML=html;
-  requestAnimationFrame(()=>{
-    const canvas=document.getElementById('mc');
-    if(canvas){drawMap();canvas.onclick=handleCanvasClick;}
-  });
+// ═══════════════ SHARED RENDERS ═══════════════
+function renderP(elId,p){
+  if(!p||!p.mxHp){document.getElementById(elId).innerHTML='';return;}
+  const hpP=Math.round(p.hp/p.mxHp*100),hpC=hpP>60?'var(--grn)':hpP>30?'var(--gold)':'var(--red)',eA=Math.round(p.bA*(1+p.aM/100));
+  document.getElementById(elId).innerHTML=`<div><div style="display:flex;justify-content:space-between;font-size:9px"><span style="color:${hpC}">❤️</span><span style="color:${hpC};font-weight:700">${p.hp}/${p.mxHp}</span></div><div class="bar-w"><div class="bar-f" style="width:${Math.max(0,hpP)}%;background:${hpC}"></div></div></div>
+    <div class="sr"><span style="color:var(--mu)">⚔️</span><span>${p.bA}+${p.aM}%=<b style="color:var(--gold)">${eA}</b></span></div>
+    <div class="sr"><span style="color:var(--mu)">🛡</span><span>${Math.max(0,p.dr+p.mDR)}%</span></div>
+    <div class="sr"><span style="color:var(--mu)">💰</span><span style="color:var(--gold)">${p.coin}🪙</span></div>
+    <div class="sr"><span style="color:var(--mu)">⏱</span><span>${Math.floor(p.time/60)}:${String(Math.floor(p.time%60)).padStart(2,'0')}</span></div>`;
+}
+function renderYS(elId,p){
+  let h='';(p?.yantra||[null,null,null,null]).forEach((y,i)=>{if(y){const cc=CC[y.cat];h+=`<div class="ys-s f" style="border-color:${cc}40;background:${cc}06"><div style="font-size:7px;color:var(--ft);position:absolute;top:1px;left:3px">S${i+1}</div><div style="position:absolute;top:1px;right:3px;font-size:8px">${y.c}</div><div style="font-weight:700;color:${cc};margin-top:8px;font-size:8px">${y.n}</div><div style="font-size:7px;color:var(--mu)">${y.eff}</div></div>`;}else h+=`<div class="ys-s"><div style="font-size:7px;color:var(--ft);position:absolute;top:1px;left:3px">S${i+1}</div><div style="text-align:center;color:var(--ft);font-size:12px;margin-top:8px">—</div></div>`;});
+  document.getElementById(elId).innerHTML=h;
 }
 
-function changeNodeType(l,ni,newType){
-  if(!currentMap)return;
-  currentMap.layers[l][ni].type=newType;
-  renderMapArea();
+// ═══════════════ WEIGHT/TIMING EDITORS ═══════════════
+const PK=["early","mid","preBoss"];let wTab=0;
+function renderWE(){const ph=PK[wTab],w=W[ph];let h='';RK.forEach(k=>{const r=RT[k];h+=`<div class="w-row"><span style="width:14px;font-size:10px">${r.i}</span><span style="width:38px;color:var(--mu)">${k}</span><input type="range" min="0" max="60" value="${w[k]}" oninput="W['${ph}']['${k}']=+this.value;this.nextElementSibling.textContent=this.value" style="accent-color:${r.c}"><span style="width:18px;text-align:right;color:${r.c};font-weight:700;font-size:8px">${w[k]}</span></div>`;});document.getElementById('wEdit').innerHTML=h;}
+function swWT(i){wTab=i;document.querySelectorAll('#wTabs .wtab').forEach((t,j)=>t.classList.toggle('on',j===i));renderWE();}
+function resetW(){W=JSON.parse(JSON.stringify(DW));renderWE();}
+function renderTE(){const lb={combat:"⚔️Cmbt",elite:"💀Elite",boss:"👹Boss",shop:"🛒Shop",healing:"❤️Heal",gold:"💰Gold",weapon:"⚔️Wpn",upgrade:"⬆️Up",relic:"🔮Relic",challenge:"⚠️Chall"};let h='';Object.entries(TIM).forEach(([k,v])=>{h+=`<div class="w-row"><span style="width:52px;font-size:8px">${lb[k]||k}</span><input type="number" value="${v}" min="5" max="600" style="width:38px;background:var(--s3);color:var(--tx);border:1px solid var(--bd);border-radius:3px;padding:1px 2px;font-size:9px;text-align:center" onchange="TIM['${k}']=+this.value"><span style="font-size:7px;color:var(--dm)">s</span></div>`;});document.getElementById('timEdit').innerHTML=h;}
+
+// ═══════════════ TAB / DATA / EXPORT ═══════════════
+function swTab(i){document.querySelectorAll('.main-tab').forEach((t,j)=>t.classList.toggle('on',j===i));document.querySelectorAll('.tc').forEach((t,j)=>t.classList.toggle('on',j===i));if(i===2)renderDT();}
+function updDC(){document.getElementById('dcS').textContent=DATA.s.length;document.getElementById('dcM').textContent=DATA.m.length;document.getElementById('dcB').textContent=DATA.b.length;}
+function renderDT(){
+  document.getElementById('dtS').innerHTML=DATA.s.map(d=>`<tr><td>${d.run}</td><td>${d.pat}</td><td>${d.rooms}</td><td>${Math.floor(d.time/60)}:${String(Math.floor(d.time%60)).padStart(2,'0')}</td><td>${d.coin}</td><td>${d.hp}/${d.mxHp}</td><td>${d.yantra}</td><td>${d.shops}</td><td>${d.elites}</td><td>${d.ok?'✅':'💀'}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.types}</td></tr>`).join('');
+  document.getElementById('dtM').innerHTML=DATA.m.map(d=>`<tr><td>${d.run}</td><td style="color:${d.ok?'var(--grn)':'var(--red)'}">${d.ok?'✅':'💀'}</td><td>${d.prog}</td><td>${d.time}</td><td>${d.coin}</td><td>${d.hp}/${d.mxHp}</td><td>${d.yantra}</td><td>+${d.pod}</td><td>${d.mlv}</td><td>${d.died}</td><td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.types}</td></tr>`).join('');
+  document.getElementById('dtB').innerHTML=DATA.b.map(d=>`<tr><td>${d.set}</td><td>${d.cr}%</td><td>${d.ar}</td><td>${d.ad}</td><td>${d.at}</td><td>${d.f}</td><td>${d.sl}</td><td>${d.rm}</td><td>${d.df}</td></tr>`).join('');
+}
+function exportCSV(type){
+  let csv='',fn='revantra_data.csv';
+  if(type==='single'||type==='all'){csv+='\uFEFFRun,Pattern,Rooms,Time_s,KasapCoin,HP,MaxHP,Yantra,Shops,Elites,Cleared,Path\n';DATA.s.forEach(d=>{csv+=`${d.run},${d.pat},${d.rooms},${d.time},${d.coin},${d.hp},${d.mxHp},${d.yantra},${d.shops},${d.elites},${d.ok},${d.types}\n`;});csv+='\n';fn=type==='all'?'revantra_all.csv':'revantra_single.csv';}
+  if(type==='multi'||type==='all'){csv+='Run,Result,Progress,Time_s,KasapCoin,HP,MaxHP,Yantra,PodEarned,MetaLv,DiedAt,Path\n';DATA.m.forEach(d=>{csv+=`${d.run},${d.ok?'CLEAR':'DEAD'},${d.prog},${d.time},${d.coin},${d.hp},${d.mxHp},${d.yantra},${d.pod},${d.mlv},${d.died},${d.types}\n`;});csv+='\n';if(type!=='all')fn='revantra_multi.csv';}
+  if(type==='batch'||type==='all'){csv+='Set,ClearRate,AvgRuns,AvgDeaths,AvgTimeMin,Fastest,Slowest,Rooms,Diff\n';DATA.b.forEach(d=>{csv+=`${d.set},${d.cr},${d.ar},${d.ad},${d.at},${d.f},${d.sl},${d.rm},${d.df}\n`;});csv+='\n';if(type!=='all')fn='revantra_batch.csv';}
+  if(type==='all'){csv+=`\nMETA_SUMMARY\nTotalRuns,${META.runs}\nDeaths,${META.deaths}\nClears,${META.clears}\nFirstClear,${META.fc||'N/A'}\nTotalTime_s,${Math.round(META.tTime)}\nSkillLevel,${mLv()}\n`;}
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fn;a.click();URL.revokeObjectURL(url);
 }
 
-function renderAll(){
-  renderMapArea();
-  renderPlayerPanel();
-  renderYantraSlots();
-}
-
-// ═══════════════════════════════════════════════════
-// ACTIONS
-// ═══════════════════════════════════════════════════
-function doGenerate(){
-  const sel=document.getElementById('patSel').value;
-  const pat=sel?PATTERNS.find(p=>p.id===sel):undefined;
-  currentMap=generateMap(pat);
-  selectedPath=[];
-  resetPlayer();
-  renderAll();
-}
-
-function doReset(){
-  selectedPath=[];
-  resetPlayer();
-  renderAll();
-}
-
-// INIT
+// ═══════════════ INIT ═══════════════
 (function(){
-  const sel=document.getElementById('patSel');
-  PATTERNS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=`${p.id}: ${p.name}`;sel.appendChild(o);});
-  renderWeightEditor();
-  renderPlayerPanel();
-  renderYantraSlots();
+  let th='';PK.forEach((p,i)=>{th+=`<div class="wtab${i===0?' on':''}" onclick="swWT(${i})">${['Early','Mid','Pre-B'][i]}</div>`;});
+  document.getElementById('wTabs').innerHTML=th;renderWE();renderTE();s_render();m_renderAll();updDC();
 })();
 </script>
 </body>
